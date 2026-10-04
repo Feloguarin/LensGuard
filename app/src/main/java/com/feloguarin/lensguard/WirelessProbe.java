@@ -61,7 +61,7 @@ public final class WirelessProbe {
     private ScanCallback bleCallback;
     private WifiManager.MulticastLock multicastLock;
     private Runnable timeout;
-    private boolean running;
+    private boolean running, hasSurvey;
     private boolean updatePending;
     private int session;
     private long startedAtMs;
@@ -97,11 +97,28 @@ public final class WirelessProbe {
         });
     }
 
+    public boolean isRunning() { return running; }
+
+    public String summary() {
+        if (!hasSurvey) return "READY · Tap Start scan to begin";
+        long remaining = Math.max(0, (SCAN_DURATION_MS - (SystemClock.elapsedRealtime() - startedAtMs) + 999) / 1000);
+        return (running ? "SCANNING · " + remaining + " seconds left" : scanStatus.startsWith("15-second survey complete") ? "COMPLETE · Review observations below" : "STOPPED · Last survey observations")
+                + "\n" + wifiResults.size() + " Wi-Fi · " + bleResults.size() + " Bluetooth · " + services.size() + " services";
+    }
+
+    private final Runnable countdown = new Runnable() {
+        @Override public void run() {
+            if (!running) return;
+            publishNow();
+            handler.postDelayed(this, 1000);
+        }
+    };
+
     private void startOnMain() {
         if (running) stopOnMain("Restarting survey.");
         session++;
         final int currentSession = session;
-        running = true;
+        running = true; hasSurvey = true;
         startedAtMs = SystemClock.elapsedRealtime();
         wifiResults.clear();
         bleResults.clear();
@@ -121,10 +138,12 @@ public final class WirelessProbe {
         };
         handler.postDelayed(timeout, SCAN_DURATION_MS);
         publishNow();
+        handler.postDelayed(countdown, 1000);
     }
 
     private void stopOnMain(String status) {
         running = false;
+        handler.removeCallbacks(countdown);
         session++; // Discard late broadcasts and callbacks from the previous survey.
         if (timeout != null) handler.removeCallbacks(timeout);
         timeout = null;
@@ -162,6 +181,9 @@ public final class WirelessProbe {
             multicastLock = null;
         }
         scanStatus = status;
+        if (bleStatus.startsWith("Listening for")) bleStatus = "Bluetooth survey ended; results from this survey are shown below.";
+        if (serviceStatus.startsWith("Discovering advertised")) serviceStatus = "Local service discovery ended; results from this survey are shown below.";
+        if (wifiStatus.startsWith("One Wi-Fi scan requested")) wifiStatus = "Survey ended before a new system Wi-Fi scan arrived. Results may be cached.";
         publishNow();
     }
 
@@ -452,7 +474,7 @@ public final class WirelessProbe {
         handler.removeCallbacks(publishTask);
         updatePending = false;
         String text = render();
-        if (text.equals(lastPublishedText)) return;
+        if (text.equals(lastPublishedText) && !running) return;
         lastPublishedText = text;
         lastPublishedMs = SystemClock.elapsedRealtime();
         listener.onUpdate(text);
@@ -461,9 +483,6 @@ public final class WirelessProbe {
     private String render() {
         long nowMs = SystemClock.elapsedRealtime();
         StringBuilder out = new StringBuilder(scanStatus)
-                .append("\n\nNearby radios and advertised services are leads for manual inspection. ")
-                .append("They do not identify hidden cameras. RSSI is received signal strength, ")
-                .append("not distance or RF spectrum analysis. An empty survey cannot prove a room is safe.")
                 .append("\n\nWI-FI ACCESS POINTS\n").append(wifiStatus)
                 .append("\nAndroid normally limits foreground Wi-Fi scans to four per two minutes. ")
                 .append("Results can be cached; Wi-Fi client devices may never appear.\n");
@@ -495,10 +514,7 @@ public final class WirelessProbe {
         appendOverflow(out, bleList.size());
         if (bleList.isEmpty()) out.append("\nNo BLE advertisements observed.\n");
         out.append("\nADVERTISED LOCAL SERVICES\n").append(serviceStatus)
-                .append("\nOnly services advertised on reachable local networks are visible. ")
-                .append("mDNS sends standard service discovery queries; no endpoint connections, ")
-                .append("port scans, authentication, or stream access are attempted. ")
-                .append("RTSP/ONVIF advertisements are inspection leads; names can be misleading.\n");
+                .append("\nRTSP/ONVIF names are leads to inspect, not confirmed cameras.\n");
         displayed = 0;
         for (ServiceObservation item : services.values()) {
             if (displayed++ >= DISPLAY_LIMIT) break;

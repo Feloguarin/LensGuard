@@ -67,5 +67,5 @@ jobs:
         run: |
           gh release create "evaluation-${GITHUB_RUN_NUMBER}" dist/LensGuard.apk dist/SHA256SUMS.txt dist/signing-certificate.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "LensGuard 1.0.0 · evaluation ${GITHUB_RUN_NUMBER}" --latest \
+            --title "LensGuard 1.1.0 · evaluation ${GITHUB_RUN_NUMBER}" --latest \
             --notes-file .github/release-notes.md

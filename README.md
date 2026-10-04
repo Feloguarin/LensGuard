@@ -21,7 +21,7 @@
 3. Open **LensGuard**. Grant permissions when you choose a tool. Enable Wi-Fi, Bluetooth and Android Location for a complete wireless survey.
 4. Start with a known camera and ordinary household controls, following the [quick test](docs/TESTING.md).
 
-**Requirements:** Android 9+ (API 28). Current app: 1.0.0; targets API 35. No Play Store listing yet.
+**Requirements:** Android 9+ (API 28). Current app: 1.1.0; targets API 35. No Play Store listing yet.
 
 **Updating an evaluation build:** CI generates a new development signing key for each APK. Android may reject an update with a different signer. Export your notes/photos first, uninstall the older evaluation app and install the new one. Uninstalling removes private app data. A persistent private release key is needed for seamless updates.
 
@@ -29,20 +29,26 @@
 
 | Tab | Tools | How to interpret them |
 | --- | --- | --- |
-| **Sweep** | Front/rear camera, flashlight, zoom, exposure, small bright-point hints, private photo capture, stationary magnetic baseline | Compare reflections from several angles. Magnetic changes can come from metal, magnets or ordinary electronics. |
-| **Signals** | 15-second Wi-Fi/BLE/local-service survey; optional 15–22 kHz sound analysis | Names, signal strength and tones are observations, not device identity. Wi-Fi scans list access points, not all devices on a network. |
-| **Sensors** | Every Android-exposed sensor, raw readings/status, light/proximity/pressure/motion context; optional activity-sensor permission | Public hardware inventory; inaccessible streams are reported. Proprietary camera/biometric subsystems are not general raw sensors. |
-| **Notes** | Private notes, JSON report sharing, latest-photo sharing, local evidence deletion | Evidence stays local until you explicitly share it. Review reports for nearby-device identifiers first. |
+| **Start** | Three guided steps: look for a lens, check nearby signals, save an observation | Begin with a visible webcam to learn the controls. |
+| **Camera** | Front/rear preview, tap-to-focus, flashlight, frame counter, highlight hints, private photo capture; expandable zoom/exposure | LIVE means frames are being analyzed. Highlights do not identify a camera. |
+| **Nearby** | 15-second Wi-Fi/BLE/local-service survey with countdown, counts and per-radio status | Names and signal strength do not establish identity. Wi-Fi lists access points, not every network device. |
+| **Tools** | Magnetic baseline/comparison, sensor diagnostics, experimental sound check, notes and report/photo sharing | Optional measurements provide context. Evidence stays local until you share it. |
 
 No accounts, ads, analytics or cloud detection. Camera frames and microphone samples are analyzed locally; audio is not recorded to storage. [Privacy details](PRIVACY.md)
 
+## App preview
+
+<p><img src="docs/assets/app-start.png" width="280" alt="LensGuard guided Start screen"><img src="docs/assets/app-camera.png" width="280" alt="LensGuard camera showing a live frame count"></p>
+
+Actual Android 15 emulator screenshots. The camera image is the emulator's synthetic scene; it is not a hidden-camera detection result.
+
 ## Your first 10-minute test
 
-1. **Sweep → Start camera:** point at a visible webcam or another phone's camera. Toggle the light, move slowly and change angles. Try a shiny screw or glass too: these can also produce highlights.
-2. **Calibrate baseline:** hold the phone still, away from metal, for about three seconds. Move near an ordinary speaker or steel object and compare the field/delta. A change is not a camera verdict.
-3. **Signals → Scan · 15 seconds:** check whether your known Wi-Fi access point appears. Review fresh/cached labels. Bluetooth devices appear only if they advertise.
-4. **Sensors:** cover/uncover the light sensor area and rotate the phone. Watch the available readings and unavailable statuses.
-5. **Save photo**, then **Notes → Share report** or **Share latest photo**. Verify that sharing contains the observations you intended. Background the app and check that camera/microphone use stops.
+1. **Camera → Start camera:** point at a visible webcam or another phone's camera. Tap **Turn light on**, move slowly and change angles. Try a shiny screw or glass too: these can also produce highlights.
+2. **Tools → Open magnetic check → Set baseline:** hold the phone still, away from metal, for about three seconds. Move near an ordinary speaker or steel object and compare the field/delta. A change is not a camera verdict.
+3. **Nearby → Start 15-second scan:** check whether your known Wi-Fi access point appears. Review fresh/cached labels. Bluetooth devices appear only if they advertise.
+4. **Tools → Open sensor readings:** cover/uncover the light sensor area and rotate the phone. Watch the available readings and unavailable statuses.
+5. **Save photo**, then **Tools → Open notes → Share report** or **Share latest photo**. Verify that sharing contains the observations you intended. Background the app and check that camera/microphone use stops.
 
 Record passes, failures and misses instead of assuming detection worked. Follow the [full beginner guide](docs/TESTING.md), [physical-device checklist](docs/DEVICE_TEST_PLAN.md) and [test-results template](docs/test-results/TEMPLATE.md).
 
@@ -51,9 +57,9 @@ Record passes, failures and misses instead of assuming detection worked. Follow 
 | Check | Current evidence |
 | --- | --- |
 | Build and lint | Passed; lint has no errors. Non-fatal warnings remain. |
-| Automated tests | 21 tests pass in both debug and release variants; startup/navigation/state tests cover API 28 and 35. |
+| Automated tests | 27 tests pass in both debug and release variants; startup/navigation/state tests cover API 28 and 35. |
 | APK signature and download | Verified; GitHub release includes APK, SHA-256 checksum and signing-certificate information. |
-| Android 15 emulator | Signed release APK installed and launched successfully. |
+| Android 15 emulator | Signed release APK installed; camera frames, photo/share preview and foreground cleanup checked. See [test record](docs/test-results/2026-10-04-emulator.md). |
 | Physical Pixel 9 behavior | **Pending community/device testing.** |
 | Hidden-camera detection accuracy | **Not established.** No certified sensitivity, false-positive rate or room-clear claim. |
 

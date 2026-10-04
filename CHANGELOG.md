@@ -7,6 +7,16 @@
 - Added charcoal/lime brand banner, editable lens/shield vectors and brand guidelines.
 - Application behavior and APK code are unchanged by this documentation update.
 
+## 1.1.0 evaluation — 2026-10-04
+
+- Add a guided Start screen with three room-inspection steps.
+- Separate Camera, Nearby and optional Tools; move raw sensors, magnetic comparisons, sound and notes into Tools.
+- Add tap-to-focus for small objects and a stalled-frame status.
+- Show explicit camera off/live states and an increasing analyzed-frame count. Disable photo/light controls until available.
+- Fix radio status text that continued to say it was listening after a scan stopped.
+- Add a nearby-scan countdown, observation counts and clear radio status; keep zoom/exposure out of the initial camera flow.
+- Add navigation, saved-state and wireless countdown/cleanup regression tests on Android API 28 and 35.
+
 ## 1.0.0 evaluation — 2026-10-04
 
 Initial GitHub release: [evaluation-2](https://github.com/Feloguarin/LensGuard/releases/tag/evaluation-2).

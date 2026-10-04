@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -28,6 +29,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
@@ -50,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends ComponentActivity {
     private static final int BG = Color.rgb(13, 20, 23), CARD = Color.rgb(24, 35, 39);
@@ -71,17 +75,18 @@ public class MainActivity extends ComponentActivity {
     private Runnable permissionAction;
     private int permissionTab;
     private boolean permissionResolved;
-    private int tab = 0, cameraGeneration = 0;
+    private int tab = 0, tool = 0, cameraGeneration = 0, analyzedFrames = 0;
     private boolean resumed, front, torch, listening;
     private String optical = "Start the camera to inspect reflections.", radio = "No radio scan yet.", sound = "Microphone off.";
     private String note = "";
-    private long lastAnalysis;
+    private long lastAnalysis, lastFrameAt;
     private File lastPhoto;
-    private Button torchButton, audioButton;
+    private Button torchButton, audioButton, cameraButton, photoButton, scanButton, scanStopButton;
+    private TextView cameraPlaceholder, cameraStatus, scanStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        if (state != null) { tab = state.getInt("tab"); front = state.getBoolean("front"); note = state.getString("note", ""); }
+        if (state != null) { tab = state.getInt("tab"); tool = state.getInt("tool"); front = state.getBoolean("front"); note = state.getString("note", ""); }
         else note = getPreferences(MODE_PRIVATE).getString("note", "");
         imageExecutor = Executors.newSingleThreadExecutor();
         permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -90,11 +95,12 @@ public class MainActivity extends ComponentActivity {
         });
         sensors = new SensorMonitor(this, snapshot -> {
             sensorSnapshot = snapshot;
-            set(magneticView, snapshot.magnetic); set(motionView, snapshot.motion);
+            if (camera != null && SystemClock.elapsedRealtime() - lastFrameAt > 3500) set(cameraStatus, "WAITING · No new camera frames. Try restarting camera.");
+            updateMagnetic(snapshot); set(motionView, snapshot.motion);
             set(sensorView, snapshot.inventory); set(environmentView, snapshot.environment);
             set(calibrationView, snapshot.calibration);
         });
-        wireless = new WirelessProbe(this, result -> { radio = result; set(radioView, result); });
+        wireless = new WirelessProbe(this, result -> { radio = result; set(radioView, result); updateSurvey(); });
         audio = new AudioProbe(this, result -> {
             sound = result; set(audioView, result); listening = audio.isRunning();
             if (audioButton != null) audioButton.setText(listening ? "Stop microphone" : "Enable microphone");
@@ -128,41 +134,78 @@ public class MainActivity extends ComponentActivity {
         rememberNote(); tab = index; stopCamera(); wireless.stop(); stopAudio();
         pages.removeAllViews(); magneticView = motionView = opticalView = radioView = sensorView = environmentView = audioView = calibrationView = null;
         noteInput = null; previewView = null; torchButton = null; audioButton = null;
+        cameraButton = photoButton = scanButton = scanStopButton = null; cameraPlaceholder = cameraStatus = scanStatus = null;
         nav.removeAllViews();
-        String[] names = {"Sweep", "Signals", "Sensors", "Notes"};
+        String[] names = {"Start", "Camera", "Nearby", "Tools"};
         for (int i = 0; i < names.length; i++) {
             final int n = i;
-            Button b = button(names[i], () -> showTab(n)); b.setTextColor(i == index ? BG : MUTED); b.setBackground(shape(i == index ? MINT : CARD, 12));
+            Button b = button(names[i], () -> { if (n == 3) tool = 0; showTab(n); }); b.setTextColor(i == index ? BG : MUTED); b.setBackground(shape(i == index ? MINT : CARD, 12));
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(48), 1); p.setMargins(dp(2), 0, dp(2), 0); nav.addView(b, p);
         }
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(false); scroll.setClipToPadding(false); scroll.setPadding(0, dp(16), 0, dp(12));
         LinearLayout body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); scroll.addView(body);
         pages.addView(scroll, new LinearLayout.LayoutParams(-1, -1));
-        if (index == 0) buildSweep(body);
-        else if (index == 1) buildSignals(body);
-        else if (index == 2) buildSensors(body);
-        else buildNotes(body);
+        if (index == 0) buildStart(body);
+        else if (index == 1) buildSweep(body);
+        else if (index == 2) buildSignals(body);
+        else buildTools(body);
         if (sensorSnapshot != null) {
-            set(magneticView, sensorSnapshot.magnetic); set(motionView, sensorSnapshot.motion);
+            updateMagnetic(sensorSnapshot); set(motionView, sensorSnapshot.motion);
             set(sensorView, sensorSnapshot.inventory); set(environmentView, sensorSnapshot.environment); set(calibrationView, sensorSnapshot.calibration);
         }
     }
 
+    private void buildStart(LinearLayout body) {
+        body.addView(text("Inspect your space.", 30, TEXT));
+        label(body, "START HERE / ABOUT 5 MINUTES");
+        body.addView(text("Begin with what you can see. Each tool helps you collect clues to check yourself.", 15, MUTED));
+        LinearLayout visual = card(body, "1. Look for a lens", "Dim the room. Move slowly around objects facing beds, bathrooms or changing areas.");
+        visual.addView(primary("Open camera", () -> showTab(1)));
+        LinearLayout nearby = card(body, "2. Check nearby signals", "Look for your known Wi-Fi network and advertised devices. Unfamiliar names alone are not evidence of a camera.");
+        nearby.addView(button("Open nearby scan", () -> showTab(2)));
+        LinearLayout notes = card(body, "3. Save what you noticed", "Keep a photo or a note about a specific object. Compare it from several angles.");
+        notes.addView(button("Open notes", () -> openTool(3)));
+        body.addView(text("Nothing here can confirm a hidden camera or prove a room is clear. Start with a visible webcam to learn how reflections behave.", 13, MUTED));
+    }
+
     private void buildSweep(LinearLayout body) {
-        body.addView(text("Look closer.", 31, TEXT)); label(body, "01 / VISUAL SWEEP");
+        body.addView(text("Look for a lens.", 29, TEXT));
+        body.addView(text("Dim the room and turn the light on. Tap the lens area to focus, then change angles slowly.", 14, MUTED));
         FrameLayout frame = new FrameLayout(this); frame.setBackground(shape(CARD, 20)); frame.setClipToOutline(true);
         previewView = new PreviewView(this); previewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
+        previewView.setOnTouchListener((view, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                view.performClick();
+                if (camera != null) {
+                    MeteringPoint point = previewView.getMeteringPointFactory().createPoint(event.getX(), event.getY());
+                    FocusMeteringAction focus = new FocusMeteringAction.Builder(point).setAutoCancelDuration(5, TimeUnit.SECONDS).build();
+                    camera.getCameraControl().startFocusAndMetering(focus);
+                    toast("Focusing here. Hold steady and change angles slowly.");
+                }
+            }
+            return true;
+        });
         frame.addView(previewView, new FrameLayout.LayoutParams(-1, -1));
-        TextView reticle = text("＋", 44, MINT); reticle.setGravity(Gravity.CENTER); reticle.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        frame.addView(reticle, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(-1, dp(285)); fp.setMargins(0, dp(10), 0, dp(8)); body.addView(frame, fp);
-        opticalView = text(optical, 13, MINT); body.addView(opticalView);
-        row(body, button("Start camera", () -> permissions(new String[]{Manifest.permission.CAMERA}, this::startCamera)),
-                button("Flip", () -> { front = !front; if (camera != null) startCamera(); }));
-        torchButton = button("Light off", this::toggleTorch);
-        row(body, torchButton, button("Save photo", this::savePhoto));
-        TextView zoomLabel = text("Zoom · 1×", 12, MUTED); body.addView(zoomLabel);
-        SeekBar zoom = new SeekBar(this); zoom.setMax(100); body.addView(zoom);
+        cameraPlaceholder = text("Camera is off\nTap Start camera below", 18, MUTED); cameraPlaceholder.setGravity(Gravity.CENTER);
+        cameraPlaceholder.setBackgroundColor(CARD); frame.addView(cameraPlaceholder, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(-1, dp(225)); fp.setMargins(0, dp(12), 0, dp(8)); body.addView(frame, fp);
+        cameraStatus = text("OFF · No camera frames being analyzed", 12, MUTED); body.addView(cameraStatus);
+        opticalView = text("Start the camera to inspect reflections.", 13, TEXT); body.addView(opticalView);
+        cameraButton = primary("Start camera", () -> {
+            if (camera != null) stopCamera();
+            else permissions(new String[]{Manifest.permission.CAMERA}, this::startCamera);
+        });
+        row(body, cameraButton, button("Switch camera", () -> { front = !front; if (camera != null) startCamera(); else set(cameraStatus, "OFF · " + (front ? "Front" : "Rear") + " camera selected"); }));
+        torchButton = button("Turn light on", this::toggleTorch); torchButton.setEnabled(false); torchButton.setAlpha(.45f);
+        photoButton = button("Save photo", this::savePhoto); photoButton.setEnabled(false); photoButton.setAlpha(.45f);
+        row(body, torchButton, photoButton);
+        body.addView(text("A bright point may be glass, a screw or an LED. LensGuard counts small highlights; it does not recognize cameras.", 12, MUTED));
+        body.addView(button("Add an observation", () -> openTool(3)));
+        LinearLayout advanced = new LinearLayout(this); advanced.setOrientation(LinearLayout.VERTICAL); advanced.setVisibility(View.GONE);
+        body.addView(button("Zoom & exposure options", () -> advanced.setVisibility(advanced.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE)));
+        body.addView(advanced);
+        TextView zoomLabel = text("Zoom · 1×", 12, MUTED); advanced.addView(zoomLabel);
+        SeekBar zoom = new SeekBar(this); zoom.setMax(100); advanced.addView(zoom);
         zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar b, int p, boolean user) {
                 if (camera != null && camera.getCameraInfo().getZoomState().getValue() != null) {
@@ -173,8 +216,8 @@ public class MainActivity extends ComponentActivity {
             }
             public void onStartTrackingTouch(SeekBar b) {} public void onStopTrackingTouch(SeekBar b) {}
         });
-        TextView exposureLabel = text("Exposure · neutral", 12, MUTED); body.addView(exposureLabel);
-        SeekBar exposure = new SeekBar(this); exposure.setMax(100); exposure.setProgress(50); body.addView(exposure);
+        TextView exposureLabel = text("Exposure · neutral", 12, MUTED); advanced.addView(exposureLabel);
+        SeekBar exposure = new SeekBar(this); exposure.setMax(100); exposure.setProgress(50); advanced.addView(exposure);
         exposure.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar b, int p, boolean user) {
                 if (camera == null) return;
@@ -186,31 +229,78 @@ public class MainActivity extends ComponentActivity {
             }
             public void onStartTrackingTouch(SeekBar b) {} public void onStopTrackingTouch(SeekBar b) {}
         });
-        card(body, "What to look for", "Dim the room, turn on the light, and sweep slowly around sockets, clocks, smoke detectors and objects facing private areas. Look for a tiny, repeatable reflection from multiple angles. Glass, screws and LEDs also produce highlights. Infrared visibility varies; this is not a thermal camera.");
-        LinearLayout field = card(body, "02 / MAGNETIC CLUES", null);
-        magneticView = text("Waiting for magnetometer…", 22, MINT); field.addView(magneticView);
-        motionView = text("Hold still to establish a local baseline.", 13, MUTED); field.addView(motionView);
-        calibrationView = text("Calibrate away from metal and magnets.", 12, MUTED); field.addView(calibrationView);
-        field.addView(button("Calibrate baseline", sensors::calibrate));
-        field.addView(text("Field changes can come from metal, magnets or electronics. They do not identify a camera or measure radio-frequency emissions.", 12, MUTED));
     }
 
     private void buildSignals(LinearLayout body) {
-        body.addView(text("Follow the signals.", 29, TEXT)); label(body, "NEARBY ADVERTISEMENTS");
-        card(body, "How discovery works", "Scan visible Wi-Fi access points, Bluetooth advertisements and services advertised on your connected network. Results can guide an inspection; names and signal strength do not establish device identity. Offline cameras may emit nothing.");
-        row(body, button("Scan · 15 seconds", () -> permissions(radioPermissions(), wireless::start)), button("Stop", wireless::stop));
+        body.addView(text("Check nearby signals.", 28, TEXT));
+        body.addView(text("Turn on Wi-Fi, Bluetooth and Android Location. Connect to the room's Wi-Fi for local services. Allow precise Location when asked.", 14, MUTED));
+        scanStatus = text(wireless.summary(), 15, MINT); body.addView(scanStatus);
+        scanButton = primary("Start 15-second scan", () -> permissions(radioPermissions(), wireless::start));
+        scanStopButton = button("Stop scan", wireless::stop);
+        row(body, scanButton, scanStopButton);
+        body.addView(text("Compare with devices you know. These are advertisements, not a list of cameras. Offline cameras may emit nothing.", 13, MUTED));
         radioView = text(radio, 13, TEXT); radioView.setTextIsSelectable(true);
-        LinearLayout results = card(body, "DISCOVERY RESULTS", null); results.addView(radioView);
-        LinearLayout acoustic = card(body, "OPTIONAL / ROOM SOUND", "A coarse high-frequency sound check. There is no universal camera sound signature; chargers, lights, insects and other devices can create tones.");
-        audioView = text(sound, 14, MINT); acoustic.addView(audioView);
+        LinearLayout results = card(body, "WHAT THE SCAN OBSERVED", null); results.addView(radioView);
+        body.addView(button("Add an observation", () -> openTool(3)));
+        updateSurvey();
+    }
+
+    private void updateSurvey() {
+        if (wireless == null) return;
+        set(scanStatus, wireless.summary());
+        enabled(scanStopButton, wireless.isRunning());
+        if (scanButton != null) { scanButton.setEnabled(!wireless.isRunning()); scanButton.setAlpha(wireless.isRunning() ? .45f : 1f); }
+    }
+
+    private void openTool(int choice) { tool = choice; showTab(3); }
+
+    private void buildTools(LinearLayout body) {
+        if (tool != 0) body.addView(button("All tools", () -> openTool(0)));
+        if (tool == 1) { buildMagnetic(body); return; }
+        if (tool == 2) { buildSensors(body); return; }
+        if (tool == 3) { buildNotes(body); return; }
+        if (tool == 4) { buildAudio(body); return; }
+        body.addView(text("Optional tools.", 29, TEXT));
+        LinearLayout notes = card(body, "Notes & saved photos", "Write an observation, share a report or delete saved evidence.");
+        notes.addView(button("Open notes", () -> openTool(3)));
+        LinearLayout magnetic = card(body, "Magnetic comparison", "Compare the field near an object. Metal and magnets also change the reading; this cannot identify a camera.");
+        magnetic.addView(button("Open magnetic check", () -> openTool(1)));
+        LinearLayout inventory = card(body, "Sensor diagnostics", "Check which hardware streams are available and whether readings change.");
+        inventory.addView(button("Open sensor readings", () -> openTool(2)));
+        LinearLayout acoustic = card(body, "Experimental sound check", "Observe high-frequency tones. There is no universal camera sound signature.");
+        acoustic.addView(button("Open sound check", () -> openTool(4)));
+    }
+
+    private void buildMagnetic(LinearLayout body) {
+        body.addView(text("Compare magnetic field.", 25, TEXT));
+        card(body, "1. Set a reference", "Move away from metal, chargers and magnets. Tap Set baseline and hold still for at least 3 seconds. If accuracy is low, move the phone in a figure-eight, then retry.");
+        calibrationView = text("No baseline yet.", 14, MINT); body.addView(calibrationView);
+        body.addView(primary("Set baseline", sensors::calibrate));
+        LinearLayout field = card(body, "2. Compare near an object", "Move close to the object, then away. Repeat. A change tells you the magnetic field changed, not what caused it.");
+        magneticView = text("Waiting for magnetometer…", 22, MINT); field.addView(magneticView);
+        motionView = text("Waiting for motion readings…", 13, MUTED); field.addView(motionView);
+        field.addView(text("Magnetic field is not radio signal strength. Ordinary metal and electronics can produce large changes.", 12, MUTED));
+        body.addView(button("Add an observation", () -> openTool(3)));
+    }
+
+    private void updateMagnetic(SensorMonitor.Snapshot snapshot) {
+        String reading = !Double.isFinite(snapshot.magneticMicroTesla) ? snapshot.magnetic : String.format(Locale.US, "%.1f µT", snapshot.magneticMicroTesla);
+        if (snapshot.calibrated) reading += String.format(Locale.US, "\nChange from baseline: %.1f µT", snapshot.magneticDeltaMicroTesla);
+        set(magneticView, reading);
+    }
+
+    private void buildAudio(LinearLayout body) {
+        body.addView(text("Experimental sound check.", 24, TEXT));
+        card(body, "What this measures", "High-frequency tones from 15–22 kHz. Chargers, lights, insects and other devices can create tones. These readings cannot identify a camera.");
+        audioView = text(sound, 14, MINT); body.addView(audioView);
         audioButton = button("Enable microphone", () -> {
             if (listening) stopAudio();
             else permissions(new String[]{Manifest.permission.RECORD_AUDIO}, () -> {
-                if (!granted(Manifest.permission.RECORD_AUDIO)) { sound = "Microphone permission denied."; set(audioView, sound); return; }
+                if (!granted(Manifest.permission.RECORD_AUDIO)) { sound = "Microphone permission denied. Tap Enable microphone to retry."; set(audioView, sound); return; }
                 listening = true; audio.start(); audioButton.setText("Stop microphone");
             });
         });
-        acoustic.addView(audioButton); acoustic.addView(text("Audio is analyzed in memory. No recording is saved.", 12, MUTED));
+        body.addView(audioButton); body.addView(text("Audio is analyzed in memory. No recording is saved.", 12, MUTED));
     }
 
     private void buildSensors(LinearLayout body) {
@@ -226,7 +316,6 @@ public class MainActivity extends ComponentActivity {
 
     private void buildNotes(LinearLayout body) {
         body.addView(text("Keep your observations.", 27, TEXT)); label(body, "PRIVATE UNTIL YOU SHARE");
-        card(body, "A practical room check", "1. Inspect the layout and objects facing beds, bathrooms or changing areas.\n\n2. Sweep with the camera and light from several angles.\n\n3. Calibrate the magnetic baseline away from electronics, then compare close to an object.\n\n4. Review radio advertisements and repeat observations. Treat each clue as unconfirmed.\n\n5. If an object remains suspicious, document it and ask the property manager or a qualified professional to investigate. Avoid dismantling electrical equipment.");
         LinearLayout notes = card(body, "INSPECTION NOTES", null);
         noteInput = new EditText(this); noteInput.setText(note); noteInput.setTextColor(TEXT); noteInput.setHintTextColor(MUTED);
         noteInput.setHint("Object, room and what you observed…"); noteInput.setMinLines(3); noteInput.setGravity(Gravity.TOP); noteInput.setTextSize(15);
@@ -236,7 +325,7 @@ public class MainActivity extends ComponentActivity {
                 .setTitle("Delete local evidence?").setMessage("This deletes saved photos, notes and cached reports on this device.")
                 .setNegativeButton("Cancel", null).setPositiveButton("Delete", (d, w) -> deleteEvidence()).show()));
         card(body, "Privacy", "Camera frames and microphone samples stay in memory unless you tap Save photo. Saved photos and notes remain in app-private storage. Reports include observed sensor values and nearby device identifiers. Sharing uses the app you choose. No accounts, analytics, ads or cloud detection.");
-        card(body, "LensGuard 1.0.0 · evaluation build", "Designed for Pixel 9; adapts to other Android devices. Development-signed release. Hardware behavior still needs testing on a real Pixel 9. This app cannot guarantee a room is free of hidden cameras.");
+        card(body, "LensGuard 1.1.0 · evaluation build", "Designed for Pixel 9; adapts to other Android devices. Development-signed release. Hardware behavior still needs testing on a real Pixel 9. This app cannot guarantee a room is free of hidden cameras.");
     }
 
     private void permissions(String[] needed, Runnable action) {
@@ -259,25 +348,29 @@ public class MainActivity extends ComponentActivity {
     private boolean granted(String permission) { return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED; }
 
     private void startCamera() {
-        if (!resumed || tab != 0 || previewView == null) return;
+        if (!resumed || tab != 1 || previewView == null) return;
         if (!granted(Manifest.permission.CAMERA)) { optical = "Allow camera access to use visual inspection."; set(opticalView, optical); return; }
         stopCamera(); final int generation = cameraGeneration;
+        set(cameraPlaceholder, "Starting camera…");
         optical = "Starting " + (front ? "front" : "rear") + " camera…"; set(opticalView, optical);
         ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(this);
         future.addListener(() -> {
-            if (!resumed || tab != 0 || generation != cameraGeneration || previewView == null) return;
+            if (!resumed || tab != 1 || generation != cameraGeneration || previewView == null) return;
             try {
                 cameraProvider = future.get();
                 CameraSelector selector = front ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
-                if (!cameraProvider.hasCamera(selector)) { optical = "Selected camera unavailable."; set(opticalView, optical); return; }
+                if (!cameraProvider.hasCamera(selector)) { stopCamera(); optical = "Selected camera unavailable."; set(opticalView, optical); return; }
                 Preview preview = new Preview.Builder().build(); preview.setSurfaceProvider(previewView.getSurfaceProvider());
                 capture = new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build();
                 ImageAnalysis analysis = new ImageAnalysis.Builder().setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
                 analysis.setAnalyzer(imageExecutor, image -> analyzeFrame(image, generation));
                 camera = cameraProvider.bindToLifecycle(this, selector, preview, capture, analysis);
+                cameraPlaceholder.setVisibility(View.GONE); analyzedFrames = 0; lastFrameAt = SystemClock.elapsedRealtime();
+                cameraButton.setText("Stop camera"); enabled(photoButton, true); enabled(torchButton, camera.getCameraInfo().hasFlashUnit());
+                set(cameraStatus, "STARTING · Waiting for the first camera frame");
                 optical = "Live view · move slowly and inspect repeatable reflections."; set(opticalView, optical);
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            } catch (Exception e) { optical = "Camera unavailable. Close other camera apps and retry."; set(opticalView, optical); }
+            } catch (Exception e) { stopCamera(); optical = "Camera unavailable. Close other camera apps and retry."; set(opticalView, optical); }
         }, ContextCompat.getMainExecutor(this));
     }
 
@@ -295,21 +388,26 @@ public class MainActivity extends ComponentActivity {
             String result = glints > 0 ? glints + " small highlight(s) in this frame · inspect from several angles."
                     : "No small bright points observed · continue visual inspection.";
             if (sum / gray.length < 12) result = "Very dark view · turn on the light and sweep slowly.";
-            final String message = result + "\nReflections and LEDs can look alike. This is not camera identification.";
-            runOnUiThread(() -> { if (resumed && tab == 0 && generation == cameraGeneration) { optical = message; set(opticalView, optical); } });
+            final String message = result;
+            runOnUiThread(() -> { if (resumed && tab == 1 && generation == cameraGeneration) { lastFrameAt = SystemClock.elapsedRealtime(); optical = message; set(opticalView, optical); set(cameraStatus, "LIVE · " + (++analyzedFrames) + " frames checked · " + (front ? "Front" : "Rear") + " camera"); } });
         } catch (RuntimeException ignored) { /* A dropped frame must not interrupt preview. */ }
         finally { image.close(); }
     }
     private void toggleTorch() {
         if (camera == null) { toast("Start the camera first."); return; }
         if (!camera.getCameraInfo().hasFlashUnit()) { toast("This camera has no flashlight. Try the rear camera."); return; }
-        torch = !torch; camera.getCameraControl().enableTorch(torch); torchButton.setText(torch ? "Light on" : "Light off");
+        torch = !torch; camera.getCameraControl().enableTorch(torch); torchButton.setText(torch ? "Turn light off" : "Turn light on");
     }
     private void stopCamera() {
         cameraGeneration++; torch = false;
         if (camera != null) camera.getCameraControl().enableTorch(false);
         if (cameraProvider != null) cameraProvider.unbindAll(); camera = null; capture = null;
-        if (torchButton != null) torchButton.setText("Light off");
+        if (torchButton != null) torchButton.setText("Turn light on");
+        enabled(torchButton, false); enabled(photoButton, false);
+        if (cameraButton != null) cameraButton.setText("Start camera");
+        if (cameraPlaceholder != null) { cameraPlaceholder.setVisibility(View.VISIBLE); set(cameraPlaceholder, "Camera is off\nTap Start camera below"); }
+        set(cameraStatus, "OFF · No camera frames being analyzed");
+        if (opticalView != null) set(opticalView, "Camera stopped. Tap Start camera to continue.");
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
     private void savePhoto() {
@@ -318,7 +416,7 @@ public class MainActivity extends ComponentActivity {
         if (!directory.exists() && !directory.mkdirs()) { toast("Unable to create private evidence storage."); return; }
         File target = new File(directory, "inspection-" + System.currentTimeMillis() + ".jpg");
         capture.takePicture(new ImageCapture.OutputFileOptions.Builder(target).build(), ContextCompat.getMainExecutor(this), new ImageCapture.OnImageSavedCallback() {
-            @Override public void onImageSaved(ImageCapture.OutputFileResults result) { lastPhoto = target; toast("Photo saved privately. Share it from Notes."); }
+            @Override public void onImageSaved(ImageCapture.OutputFileResults result) { lastPhoto = target; toast("Photo saved privately. Share it from Tools → Notes."); }
             @Override public void onError(ImageCaptureException error) { toast("Photo could not be saved. Retry."); }
         });
     }
@@ -334,7 +432,7 @@ public class MainActivity extends ComponentActivity {
         rememberNote();
         try {
             JSONObject report = new JSONObject();
-            report.put("app", "LensGuard 1.0.0"); report.put("time", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).format(new Date()));
+            report.put("app", "LensGuard 1.1.0"); report.put("time", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).format(new Date()));
             report.put("device", Build.MANUFACTURER + " " + Build.MODEL); report.put("android", Build.VERSION.RELEASE);
             report.put("limitation", "Inspection observations only. No measurement confirms a camera or proves its absence.");
             report.put("notes", note); report.put("visualObservation", optical); report.put("radioObservations", radio); report.put("audioObservation", sound);
@@ -366,8 +464,10 @@ public class MainActivity extends ComponentActivity {
     @Override protected void onResume() { super.onResume(); resumed = true; sensors.start(); runPermissionActionIfReady(); }
     @Override protected void onPause() { resumed = false; rememberNote(); getPreferences(MODE_PRIVATE).edit().putString("note", note).apply(); stopCamera(); wireless.stop(); stopAudio(); sensors.stop(); super.onPause(); }
     @Override protected void onDestroy() { stopCamera(); wireless.stop(); audio.stop(); sensors.stop(); imageExecutor.shutdownNow(); super.onDestroy(); }
-    @Override protected void onSaveInstanceState(Bundle state) { rememberNote(); state.putInt("tab", tab); state.putBoolean("front", front); state.putString("note", note); super.onSaveInstanceState(state); }
+    @Override protected void onSaveInstanceState(Bundle state) { rememberNote(); state.putInt("tab", tab); state.putInt("tool", tool); state.putBoolean("front", front); state.putString("note", note); super.onSaveInstanceState(state); }
 
+    private void enabled(Button button, boolean value) { if (button != null) { button.setEnabled(value); button.setAlpha(value ? 1f : .45f); } }
+    private Button primary(String title, Runnable action) { Button button = button(title, action); button.setTextColor(BG); button.setBackground(shape(MINT, 12)); return button; }
     private void set(TextView view, String message) { if (view != null) view.setText(message); }
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_SHORT).show(); }
     private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }

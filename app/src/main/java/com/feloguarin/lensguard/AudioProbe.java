@@ -76,7 +76,7 @@ public final class AudioProbe {
             }
         }
         // The worker uses non-blocking reads and releases the recorder in its finally block.
-        postIdle("Microphone stopped. No audio was saved.");
+        if (session != null) postIdle("Microphone stopped. No audio was saved.");
     }
 
     private void capture(Session session) {

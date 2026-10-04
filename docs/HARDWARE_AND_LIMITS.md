@@ -15,3 +15,11 @@ BLE scanning needs Nearby devices permission on Android 12+. Devices that do not
 ## Interpreting observations
 
 A camera can be wired, offline, sleeping, hidden behind opaque material or absent from wireless advertisements. A shiny surface can look like a lens; a speaker or steel fixture can change a magnetic reading. No universal acoustic camera signature is established. LensGuard does not produce a camera probability or a room-clear verdict. Confirm an observation by inspecting the physical object; do not treat the app as a security certification.
+
+## Why this is not a validated automatic detector
+
+LensGuard's current optical algorithm counts small high-contrast highlights. It has no trained camera classifier, calibrated depth-reflection model or measured detection accuracy. Unit tests verify numerical behavior on synthetic inputs; emulator tests verify software operation. Neither establishes hidden-camera detection performance.
+
+The published [LAPD research prototype](https://github.com/frizensami/lapd) uses time-of-flight camera data, device-specific alignment and a model, and was tested on specified Samsung ToF-equipped phones. Its reported results cannot be transferred to LensGuard or to a Pixel 9 RGB preview. Google's [Pixel hardware specifications](https://support.google.com/pixelphone/answer/7158570) list a laser autofocus sensor; that does not establish availability of the raw ToF imaging stream used by LAPD.
+
+Before making accuracy claims, test multiple camera models, concealments, distances, lighting conditions, viewing angles, powered/offline states, and non-camera reflective controls. Record misses and false alarms, with ground-truth locations and separate training/tuning and held-out test sets. The MacBook test in [TESTING.md](TESTING.md) is a first functional check, not that validation.

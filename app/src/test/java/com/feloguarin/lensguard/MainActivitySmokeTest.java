@@ -46,29 +46,36 @@ public class MainActivitySmokeTest {
 
     @Test
     public void launchesAndNavigatesWithoutStartingCameraOrRadioSurvey() {
-        assertTextPresent("Look closer.");
-        assertTextPresent("Start the camera to inspect reflections.");
+        assertTextPresent("Inspect your space.");
+        click("Open camera");
+        assertTextPresent("Camera is off");
+        assertTextPresent("OFF · No camera frames being analyzed");
+        assertTrue(!findButton(content(), "Save photo").isEnabled());
+        assertTrue(!findButton(content(), "Turn light on").isEnabled());
 
-        click("Signals");
-        assertTextPresent("Follow the signals.");
-        assertTextPresent("No radio scan yet.");
+        click("Nearby");
+        assertTextPresent("Check nearby signals.");
+        assertTextPresent("READY · Tap Start scan");
+        assertTrue(!findButton(content(), "Stop scan").isEnabled());
 
-        click("Sensors");
+        click("Tools");
+        click("Open sensor readings");
         assertTextPresent("Know your hardware.");
         assertTextPresent("LIVE SENSOR INVENTORY");
 
-        click("Notes");
+        click("All tools");
+        click("Open notes");
         assertTextPresent("Keep your observations.");
         assertNotNull("Notes editor must be available", findEditor(content()));
 
-        click("Sweep");
-        assertTextPresent("Look closer.");
-        assertTextPresent("Start the camera to inspect reflections.");
+        click("Start");
+        assertTextPresent("Inspect your space.");
     }
 
     @Test
     public void notesAndSelectedTabSurviveActivityRecreation() {
-        click("Notes");
+        click("Start");
+        click("Open notes");
         EditText editor = findEditor(content());
         assertNotNull(editor);
         String observation = "Corner shelf; small reflection, still unconfirmed.";
@@ -84,14 +91,16 @@ public class MainActivitySmokeTest {
         assertNotNull(restored);
         assertEquals(observation, restored.getText().toString());
 
-        click("Sweep");
-        click("Notes");
+        click("Camera");
+        click("Start");
+        click("Open notes");
         assertEquals(observation, findEditor(content()).getText().toString());
     }
 
     @Test
     public void pausingStopsSensorUpdatesAndResumingRestoresNavigation() {
-        click("Sensors");
+        click("Tools");
+        click("Open sensor readings");
         controller.pause();
         // Advance a bounded interval across several ticker periods. Never run all future tasks.
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1));
@@ -99,10 +108,22 @@ public class MainActivitySmokeTest {
 
         controller.resume().postResume();
         drainImmediateWork();
-        click("Signals");
-        assertTextPresent("No radio scan yet.");
-        click("Sweep");
-        assertTextPresent("Look closer.");
+        click("Nearby");
+        assertTextPresent("READY · Tap Start scan");
+        click("Camera");
+        assertTextPresent("Look for a lens.");
+    }
+
+    @Test
+    public void optionalToolsHaveExplicitStepsAndDoNotStartMicrophone() {
+        click("Tools");
+        click("Open magnetic check");
+        assertTextPresent("1. Set a reference");
+        assertTextPresent("2. Compare near an object");
+        click("All tools");
+        click("Open sound check");
+        assertTextPresent("Microphone off.");
+        assertNotNull(findButton(content(), "Enable microphone"));
     }
 
     private void click(String label) {
