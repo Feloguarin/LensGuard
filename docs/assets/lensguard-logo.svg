@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="144" viewBox="0 0 640 144" role="img" aria-labelledby="title desc">
+  <title id="title">LensGuard — Inspect your space.</title>
+  <desc id="desc">Lime lens shield and white and lime LensGuard wordmark on charcoal.</desc>
+  <rect width="640" height="144" rx="20" fill="#0D1417"/>
+  <g transform="translate(22 24) scale(2)">
+    <path fill="#B7F779" d="M24 4 41 11v13c0 10-8 17-17 21C15 41 7 34 7 24V11Z"/>
+    <path fill="#0D1417" fill-rule="evenodd" d="M24 13a11 11 0 1 0 0 22 11 11 0 1 0 0-22M24 18a6 6 0 1 1 0 12 6 6 0 1 1 0-12"/>
+  </g>
+  <text x="142" y="79" font-family="Arial,Helvetica,sans-serif" font-size="56" font-weight="700" fill="#EFF5EF">Lens<tspan fill="#B7F779">Guard</tspan></text>
+  <text x="144" y="111" font-family="Arial,Helvetica,sans-serif" font-size="20" letter-spacing="1.2" fill="#9EB1B5">Inspect your space.</text>
+</svg>

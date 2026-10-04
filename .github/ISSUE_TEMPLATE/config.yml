@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Install and test LensGuard
+    url: https://github.com/Feloguarin/LensGuard/blob/main/docs/TESTING.md
+    about: Start with the phone testing guide and troubleshooting table.
+  - name: Sensitive security reports
+    url: https://github.com/Feloguarin/LensGuard/blob/main/SECURITY.md
+    about: Check the reporting guidance before sharing sensitive information.

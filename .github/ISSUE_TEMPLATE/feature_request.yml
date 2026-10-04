@@ -1,0 +1,22 @@
+name: Feature proposal
+description: Suggest a practical, evidence-based improvement.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain what the user would observe or do.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and limitations
+      description: For detection-related ideas, include feasible Android APIs, controls, potential misses/false positives and evidence needed.

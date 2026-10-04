@@ -1,0 +1,31 @@
+name: Device test report
+description: Share functional results, misses and negative controls from your phone.
+title: "[Device test] "
+body:
+  - type: markdown
+    attributes:
+      value: "Use docs/TESTING.md and docs/test-results/TEMPLATE.md. This is a public issue: exclude personal photos, raw inspection reports and nearby network/device identifiers. A functional pass is not proof of detection accuracy."
+  - type: input
+    id: configuration
+    attributes:
+      label: Device, Android version and release tag
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Checks and results
+      description: Mark each check pass, fail, unavailable or not run; explain relevant permission/radio states.
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: Controlled observations, misses and false positives
+      description: Describe known camera/ordinary-object controls, lighting, distance and angle without private surroundings.
+  - type: textarea
+    id: unrun
+    attributes:
+      label: What was not tested?
+    validations:
+      required: true

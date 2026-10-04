@@ -1,0 +1,39 @@
+name: Bug report
+description: Report reproducible app behavior without private evidence.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Keep personal photos, raw reports, SSIDs/BSSIDs, Bluetooth identifiers and credentials out of this public issue. Use SECURITY.md for sensitive reports."
+  - type: input
+    id: build
+    attributes:
+      label: Release tag or commit
+      placeholder: evaluation-2
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone model and Android version
+      placeholder: Base Pixel 9, Android version and build
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include relevant permission, Location and radio states without identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence and frequency
+      description: How often does it repeat? Include only redacted, relevant logs/screenshots.

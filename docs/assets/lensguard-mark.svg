@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title desc">
+  <title id="title">LensGuard mark</title>
+  <desc id="desc">A lime shield with a dark circular lens ring.</desc>
+  <path fill="#B7F779" d="M24 4 41 11v13c0 10-8 17-17 21C15 41 7 34 7 24V11Z"/>
+  <path fill="#0D1417" fill-rule="evenodd" d="M24 13a11 11 0 1 0 0 22 11 11 0 1 0 0-22M24 18a6 6 0 1 1 0 12 6 6 0 1 1 0-12"/>
+</svg>
