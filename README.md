@@ -65,6 +65,8 @@ The script uses JDK `keytool` to create the ignored local development key only i
 
 GitHub Actions runs lint, unit tests, and the release build for updates to `main`, then publishes the APK as the release asset `LensGuard.apk`. Build success checks compilation and automated rules; it does not establish detection accuracy or replace the physical-device test plan.
 
+Initial validation passed locally: lint has no errors; all 21 tests pass for both debug and release builds, including activity startup/navigation/state checks on API 28 and 35. The signed release APK installed and launched successfully in an Android 15 emulator. Real Pixel 9 sensor accuracy and detection performance remain unverified.
+
 For private production signing, provide `LENSGUARD_KEYSTORE`, `LENSGUARD_STORE_PASSWORD`, `LENSGUARD_KEY_ALIAS`, and `LENSGUARD_KEY_PASSWORD` in the build environment. Keep that keystore and its credentials outside the repository.
 
 ## License
