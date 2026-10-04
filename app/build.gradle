@@ -1,0 +1,65 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.feloguarin.lensguard'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.feloguarin.lensguard'
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    signingConfigs {
+        development {
+            storeFile file('../signing/development.p12')
+            storePassword 'lensguard-development'
+            keyAlias 'lensguard'
+            keyPassword 'lensguard-development'
+        }
+        if (System.getenv('LENSGUARD_KEYSTORE')) {
+            production {
+                storeFile file(System.getenv('LENSGUARD_KEYSTORE'))
+                storePassword System.getenv('LENSGUARD_STORE_PASSWORD')
+                keyAlias System.getenv('LENSGUARD_KEY_ALIAS')
+                keyPassword System.getenv('LENSGUARD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig System.getenv('LENSGUARD_KEYSTORE') ? signingConfigs.production : signingConfigs.development
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.all {
+            jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                    '--add-opens=java.base/java.util=ALL-UNNAMED',
+                    '--add-opens=java.base/java.io=ALL-UNNAMED',
+                    '--add-opens=java.base/java.net=ALL-UNNAMED',
+                    '--add-opens=java.base/java.security=ALL-UNNAMED',
+                    '--add-opens=java.base/java.text=ALL-UNNAMED',
+                    '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED',
+                    '--add-opens=java.desktop/java.awt.font=ALL-UNNAMED',
+                    '--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
+        }
+    }
+    lint { abortOnError true }
+}
+dependencies {
+    implementation 'androidx.activity:activity:1.9.3'
+    implementation 'androidx.camera:camera-camera2:1.4.2'
+    implementation 'androidx.camera:camera-lifecycle:1.4.2'
+    implementation 'androidx.camera:camera-view:1.4.2'
+    implementation 'androidx.core:core:1.15.0'
+    testImplementation 'junit:junit:4.13.2'
+    // 4.17's Wi-Fi shadow references API36 BlockingOption even on older SDKs.
+    testImplementation 'org.robolectric:robolectric:4.16.1'
+}
