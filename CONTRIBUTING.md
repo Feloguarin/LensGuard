@@ -6,7 +6,7 @@ Thank you for helping make room-inspection tools more transparent and testable. 
 
 - Sanitized physical-device test reports, especially base Pixel 9 and API 28–30 phones.
 - Reproducible fixes for permissions, lifecycle cleanup, accessibility or sensor availability.
-- Localization and clearer inspection instructions.
+- Translations (English and Spanish exist today) and clearer inspection instructions.
 - Measured optical/magnetic/audio improvements with negative controls, misses and false positives.
 
 Keep the distinction between an observation and a camera identification. Do not add unsupported accuracy percentages, thermal/IR promises or a room-clear verdict. Use respectful discussion and reproducible evidence; do not post personal rooms or device/network identifiers in public reports.
@@ -57,20 +57,45 @@ keytool -genkeypair -noprompt -keystore signing/development.p12 -storetype PKCS1
 
 Only run the Windows key-generation command if the keystore does not already exist. Retaining the local key keeps repeat local builds compatible. Release output is `app/build/outputs/apk/release/app-release.apk`. The development password is not a production secret; the actual private keystore must still remain ignored and unshared.
 
-For a persistent private release signer, provide `LENSGUARD_KEYSTORE`, `LENSGUARD_STORE_PASSWORD`, `LENSGUARD_KEY_ALIAS` and `LENSGUARD_KEY_PASSWORD` in the build environment. Keep credentials and the keystore outside source control. Current GitHub CI uses temporary evaluation signing; it does not provision production secrets.
+For a persistent private release signer, provide `LENSGUARD_KEYSTORE`, `LENSGUARD_STORE_PASSWORD`, `LENSGUARD_KEY_ALIAS` and `LENSGUARD_KEY_PASSWORD` in the build environment. Keep credentials and the keystore outside source control.
+
+### Persistent release signing
+
+From 2.0.0, LensGuard's releases are signed with one permanent key so they update in place. The maintainer keeps the keystore private and backed up offline, and CI reads it from repository secrets; losing it would force everyone to uninstall again. A fork that publishes its own builds can set up its own key the same way:
+
+```sh
+keytool -genkeypair -keystore lensguard-release.p12 -storetype PKCS12 -alias lensguard \
+    -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=LensGuard, O=LensGuard"
+base64 -i lensguard-release.p12 | gh secret set LENSGUARD_KEYSTORE_BASE64   # Linux: base64 -w0
+gh secret set LENSGUARD_STORE_PASSWORD
+gh secret set LENSGUARD_KEY_ALIAS --body lensguard
+gh secret set LENSGUARD_KEY_PASSWORD
+```
+
+The workflow uses the key only for pushes to `main`, never for pull requests, and each release's notes state which signer was used. Without the secrets, builds fall back to a temporary evaluation key, and those builds cannot update each other.
 
 ## Project map
 
 | Path | Responsibility |
 | --- | --- |
-| `app/src/main/java/.../MainActivity.java` | Native Android screens, permissions, camera/evidence flow |
-| `SensorMonitor.java` | Exposed sensors, lifecycle, stable magnetic baseline |
-| `WirelessProbe.java` | Bounded Wi-Fi/BLE/mDNS survey |
-| `AudioProbe.java` | Optional in-memory microphone analysis |
-| `DetectionMath.java`, `GlintDetector.java` | Numerical and optical helpers |
-| `app/src/test/` | Pure numerical and Robolectric activity tests |
+| `app/src/main/java/.../MainActivity.java` | Tab bar, lifecycle, permissions, sharing and shared state |
+| `StartScreen`, `CameraScreen`, `NearbyScreen`, `SensorsScreen`, `ReportScreen` | One class per tab, built in code with `Ui` and `Screen` helpers |
+| `LensCamera.java`, `ComparisonRun.java` | CameraX binding, frame analysis and the timed light on/off sequence |
+| `GlintDetector`, `FrameGeometry`, `HighlightTracker`, `LightComparison` | Lens-finder math: highlights, preview mapping, steady tracking, comparison |
+| `WirelessProbe`, `NetworkDiscovery`, `DiscoveryMessages`, `DeviceHints` | Bounded Wi-Fi/BLE/mDNS scan, ONVIF/UPnP discovery and leads |
+| `SignalFollower`, `SignalTrend` | Following one Bluetooth signal |
+| `SensorMonitor`, `AudioProbe`, `DetectionMath` | Exposed sensors, magnetic baseline, optional microphone analysis |
+| `Inspection`, `Observation`, `Checklist`, `InspectionStore` | Inspections, checklist places, private storage and 1.x migration |
+| `ReportBuilder`, `ReportPdf`, `Photos`, `Thumbnails` | JSON and PDF reports, photo decoding |
+| `HighlightOverlay`, `SparklineView`, `SignalBarsView` | Custom views for rings, charts and signal bars |
+| `app/src/main/res/values*/strings.xml` | English text and translations |
+| `app/src/test/` | Pure numerical tests and Robolectric activity tests |
 | `docs/` | Testing, hardware limits, results and branding |
 | `.github/workflows/android.yml` | Checks and GitHub APK publication |
+
+## Text and translations
+
+All user-visible text lives in `app/src/main/res/values/strings.xml`; Java code never hard-codes it. Give every string the same name and the same format arguments in each translation (`values-es/` today); lint fails the build when a translation is missing. To add a language, copy `values-es/strings.xml` into a new `values-xx/` folder, translate it, and add the locale to `res/xml/locales_config.xml` so Android's per-app language setting lists it. Keep the cautious wording: a translation must not turn a clue into a verdict.
 
 ## Validate the change
 
