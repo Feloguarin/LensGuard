@@ -1,1 +1,518 @@
-<resources><string name="app_name">LensGuard</string></resources>
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">LensGuard</string>
+
+    <!-- App frame and navigation -->
+    <string name="header_tagline">ROOM INSPECTION · ON DEVICE</string>
+    <string name="caution">Clues, not certainty. A clean scan cannot rule out cameras.</string>
+    <string name="tab_start">Start</string>
+    <string name="tab_camera">Camera</string>
+    <string name="tab_nearby">Nearby</string>
+    <string name="tab_sensors">Sensors</string>
+    <string name="tab_report">Report</string>
+    <string name="tab_selected">Selected</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_create">Create</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save">Save</string>
+    <string name="storage_failed">Could not save to private storage. Free some space and retry.</string>
+    <string name="share_clip_label">LensGuard evidence</string>
+    <string name="share_title">Share observation</string>
+    <string name="observation_saved">Saved to the report.</string>
+    <string name="note_save">Save note</string>
+    <string name="note_empty">Write a note first.</string>
+    <string name="note_saved">Note saved to the report.</string>
+    <string name="source_camera">Camera</string>
+    <string name="source_nearby">Nearby</string>
+    <string name="source_magnetic">Magnetic</string>
+    <string name="source_sound">Sound</string>
+    <string name="source_note">Note</string>
+
+    <!-- Inspections -->
+    <string name="inspection_default_title">Inspection · %1$s</string>
+    <string name="inspection_imported_title">Imported from LensGuard 1.x</string>
+    <string name="inspection_imported_photo">Photo saved with LensGuard 1.x</string>
+    <string name="inspection_imported_toast">Your LensGuard 1.x note and photos were moved into an inspection.</string>
+    <plurals name="observations">
+        <item quantity="one">%d observation</item>
+        <item quantity="other">%d observations</item>
+    </plurals>
+    <plurals name="photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+
+    <!-- Start -->
+    <string name="start_title">Inspect your space.</string>
+    <string name="start_intro">Begin with what you can see. Work through the places below and save what you notice. Each tool collects clues for you to check yourself.</string>
+    <string name="start_current_label">Current inspection</string>
+    <string name="start_open_camera">Open camera</string>
+    <string name="start_scan_nearby">Scan nearby</string>
+    <string name="start_rename">Rename</string>
+    <string name="start_rename_title">Name this inspection</string>
+    <string name="start_open_report">Open report</string>
+    <string name="start_progress" tools:ignore="PluralsCandidate">%1$d of %2$d places inspected</string>
+    <plurals name="start_closer">
+        <item quantity="one">%d needs a closer look</item>
+        <item quantity="other">%d need a closer look</item>
+    </plurals>
+    <string name="start_where_label">Where to look</string>
+    <string name="start_where_intro">Focus on objects with a view of beds, showers, toilets and changing areas. Open a place for guidance, then mark it once you have looked.</string>
+    <string name="start_limits_title">Clues, not certainty</string>
+    <string name="start_limits">Nothing here can confirm a hidden camera or prove a room is clear. Start with a visible webcam to learn how reflections behave.</string>
+    <string name="status_inspected">Inspected</string>
+    <string name="status_closer_look">Closer look</string>
+    <string name="status_not_inspected">Not inspected</string>
+
+    <!-- Checklist places -->
+    <string name="spot_smoke_detector">Smoke detectors &amp; ceiling fixtures</string>
+    <string name="spot_smoke_detector_hint">Look at the face and grille for a tiny dark opening that points into the room. Use the camera with the light on from a few angles.</string>
+    <string name="spot_clock_speaker">Clocks, radios &amp; speakers</string>
+    <string name="spot_clock_speaker_hint">Check displays and grilles, especially on devices that face the bed.</string>
+    <string name="spot_power">Chargers, outlets &amp; power strips</string>
+    <string name="spot_power_hint">Inspect USB adapters, power strips and outlets that face the bed or shower. Look for a small dark dot or an adapter that seems out of place.</string>
+    <string name="spot_tv_media">TVs, streaming boxes &amp; routers</string>
+    <string name="spot_tv_media_hint">Check front panels and status-light windows. Run a nearby scan: network equipment may answer discovery requests.</string>
+    <string name="spot_frames_mirrors">Picture frames, mirrors &amp; wall decor</string>
+    <string name="spot_frames_mirrors_hint">Look at corners and edges for holes, gaps or wires. Check behind frames that can be moved safely.</string>
+    <string name="spot_lamps">Lamps &amp; light fixtures</string>
+    <string name="spot_lamps_hint">Inspect bases, shades and fixtures for a small lens or unexpected wiring.</string>
+    <string name="spot_shelves_decor">Shelves, books, plants &amp; decorations</string>
+    <string name="spot_shelves_decor_hint">Check small objects with a clear view of the bed, shower or changing area.</string>
+    <string name="spot_appliances">Air purifiers, humidifiers &amp; thermostats</string>
+    <string name="spot_appliances_hint">Look at the front panels and vents of devices that face the room.</string>
+    <string name="spot_vents">Vents, grilles &amp; ceiling corners</string>
+    <string name="spot_vents_hint">Shine the camera light along vent slats and into corners. Look for a round dark opening that reflects the light.</string>
+    <string name="spot_bathroom">Bathroom fixtures &amp; hooks</string>
+    <string name="spot_bathroom_hint">Check hooks, holders, toiletries and anything that faces the shower or toilet.</string>
+    <string name="spot_small_items">Soft toys, tissue boxes &amp; pens</string>
+    <string name="spot_small_items_hint">Everyday items can hide a lens. Check those placed with a view of private areas.</string>
+    <string name="spot_network">Wireless &amp; network devices</string>
+    <string name="spot_network_hint">Run a nearby scan and review the leads. Compare with what you expect, such as the room\'s Wi-Fi and your own devices.</string>
+    <string name="spot_back">All places</string>
+    <string name="spot_status">Status: %1$s</string>
+    <string name="spot_tools_title">Inspect it</string>
+    <string name="spot_tools_copy">Photos, readings and notes you save from these tools are linked to this place.</string>
+    <string name="spot_use_camera">Inspect with camera</string>
+    <string name="spot_use_nearby">Scan nearby signals</string>
+    <string name="spot_use_magnetic">Compare magnetic field</string>
+    <string name="spot_magnetic_why">A strong magnetic change near an object that should contain no electronics, such as a book, frame or soft toy, is worth a closer look. Metal and magnets cause changes too.</string>
+    <string name="spot_mark_label">Mark this place</string>
+    <string name="spot_mark_inspected">Inspected</string>
+    <string name="spot_mark_closer">Needs a closer look</string>
+    <string name="spot_mark_clear">Clear status</string>
+    <string name="spot_note_label">Note for this place</string>
+    <string name="spot_note_hint">What you saw, and from where…</string>
+    <plurals name="spot_observations">
+        <item quantity="one">%d saved observation</item>
+        <item quantity="other">%d saved observations</item>
+    </plurals>
+    <string name="spot_observations_none">Nothing saved for this place yet.</string>
+    <string name="spot_banner">Inspecting: %1$s</string>
+    <string name="spot_banner_detail">Photos, readings and notes you save are linked to this place.</string>
+    <string name="spot_banner_open">Place details</string>
+    <string name="spot_banner_done">Done with place</string>
+
+    <!-- Camera -->
+    <string name="camera_title">Look for a lens.</string>
+    <string name="camera_intro">Dim the room and turn the light on. Sweep slowly; rings mark small highlights. Hold steady on one, then compare the light on and off.</string>
+    <string name="camera_preview_off">Camera preview. The camera is off.</string>
+    <string name="camera_focusing">Focusing here. Hold steady and change angles slowly.</string>
+    <string name="camera_placeholder_off">Camera is off\nTap Start camera below</string>
+    <string name="camera_placeholder_starting">Starting camera…</string>
+    <string name="camera_status_off">OFF · No camera frames being analyzed</string>
+    <string name="camera_status_starting">STARTING · Waiting for the first camera frame</string>
+    <plurals name="camera_status_live_rear">
+        <item quantity="one">LIVE · %d frame checked · Rear camera</item>
+        <item quantity="other">LIVE · %d frames checked · Rear camera</item>
+    </plurals>
+    <plurals name="camera_status_live_front">
+        <item quantity="one">LIVE · %d frame checked · Front camera</item>
+        <item quantity="other">LIVE · %d frames checked · Front camera</item>
+    </plurals>
+    <string name="camera_status_waiting">WAITING · No new camera frames. Try restarting camera.</string>
+    <string name="camera_status_rear_selected">OFF · Rear camera selected</string>
+    <string name="camera_status_front_selected">OFF · Front camera selected</string>
+    <string name="camera_summary_off">Start the camera to inspect reflections.</string>
+    <string name="camera_summary_stopped">Camera stopped. Tap Start camera to continue.</string>
+    <string name="camera_summary_dark">Very dark view · turn on the light and sweep slowly.</string>
+    <string name="camera_summary_none">No small bright points · keep sweeping slowly.</string>
+    <string name="camera_summary_hint">Hold steady on one to see whether it stays.</string>
+    <string name="camera_summary_steady_hint">Steady rings stay put while you hold still. Compare the light on and off next.</string>
+    <plurals name="camera_highlights">
+        <item quantity="one">%d small highlight</item>
+        <item quantity="other">%d small highlights</item>
+    </plurals>
+    <plurals name="camera_steady">
+        <item quantity="one">%d steady</item>
+        <item quantity="other">%d steady</item>
+    </plurals>
+    <string name="camera_start">Start camera</string>
+    <string name="camera_stop">Stop camera</string>
+    <string name="camera_switch">Switch camera</string>
+    <string name="camera_starting_rear">Starting rear camera…</string>
+    <string name="camera_starting_front">Starting front camera…</string>
+    <string name="camera_light_on">Turn light on</string>
+    <string name="camera_light_off">Turn light off</string>
+    <string name="camera_compare">Compare light on/off</string>
+    <string name="camera_comparing">Comparing…</string>
+    <string name="camera_save_photo">Save photo</string>
+    <string name="camera_add_note">Add a note</string>
+    <string name="camera_explain">A bright point may be glass, a screw or an LED. LensGuard marks small highlights; it does not recognize cameras.</string>
+    <string name="camera_advanced">Zoom &amp; exposure options</string>
+    <string name="camera_zoom">Zoom · %1$.1f×</string>
+    <string name="camera_zoom_description">Zoom</string>
+    <string name="camera_exposure">Exposure · %1$d</string>
+    <string name="camera_exposure_neutral">Exposure · neutral</string>
+    <string name="camera_exposure_description">Exposure compensation</string>
+    <string name="camera_exposure_unavailable">Exposure adjustment unavailable</string>
+    <string name="camera_permission_needed">Allow camera access to use visual inspection.</string>
+    <string name="camera_selected_unavailable">Selected camera unavailable.</string>
+    <string name="camera_unavailable">Camera unavailable. Close other camera apps and retry.</string>
+    <string name="camera_start_first">Start the camera first.</string>
+    <string name="camera_no_flash">This camera has no flashlight. Try the rear camera.</string>
+    <string name="camera_no_flash_hint">This camera has no light. The light comparison needs the rear camera\'s flashlight.</string>
+    <string name="camera_photo_saved">Photo saved privately to the report.</string>
+    <string name="camera_photo_failed">Photo could not be saved. Retry.</string>
+    <string name="camera_rear">rear camera</string>
+    <string name="camera_front">front camera</string>
+    <string name="camera_photo_summary">Photo · %1$s · %2$s</string>
+    <string name="camera_photo_comparison" tools:ignore="PluralsCandidate">light comparison: %1$d reflected the phone light, %2$d visible without it</string>
+    <string name="legend_new">highlight</string>
+    <string name="legend_steady">steady</string>
+    <string name="legend_reflection">reflects phone light</string>
+    <string name="legend_source">visible without light</string>
+    <string name="compare_progress_on">Comparing with the light on… hold steady (%1$d/%2$d)</string>
+    <string name="compare_progress_off">Comparing with the light off… hold steady (%1$d/%2$d)</string>
+    <string name="compare_moved">The phone moved during the comparison, so positions may not line up. Hold steady and compare again.</string>
+    <string name="compare_none">No steady highlight in either half of the comparison. Move closer, hold steady and try again.</string>
+    <string name="compare_needs_flash">The light comparison needs a camera with a flashlight. Switch to the rear camera.</string>
+    <string name="compare_timeout">Comparison stopped: camera frames did not arrive in time. Try again.</string>
+    <plurals name="compare_reflections">
+        <item quantity="one">%d highlight disappeared without the phone light, so it reflected that light. Camera lenses do this, and so do glass, metal and glossy plastic. Look at it from another angle.</item>
+        <item quantity="other">%d highlights disappeared without the phone light, so they reflected that light. Camera lenses do this, and so do glass, metal and glossy plastic. Look at them from other angles.</item>
+    </plurals>
+    <plurals name="compare_sources">
+        <item quantity="one">%d stayed visible without the phone light: a light source such as an LED or screen, or a reflection of room light.</item>
+        <item quantity="other">%d stayed visible without the phone light: light sources such as LEDs or screens, or reflections of room light.</item>
+    </plurals>
+
+    <!-- Nearby -->
+    <string name="nearby_title">Check nearby signals.</string>
+    <string name="nearby_intro">Turn on Wi-Fi, Bluetooth and Android Location. Connect to the room\'s Wi-Fi to check devices on its network. Allow precise Location when asked.</string>
+    <string name="nearby_start">Start 15-second scan</string>
+    <string name="nearby_stop">Stop scan</string>
+    <string name="nearby_save">Save scan to report</string>
+    <string name="nearby_explain">Compare with devices you know. These are advertisements and replies, not a list of cameras. Offline cameras may emit nothing.</string>
+    <string name="nearby_state_ready">READY · Tap Start scan to begin</string>
+    <plurals name="nearby_state_scanning">
+        <item quantity="one">SCANNING · %d second left</item>
+        <item quantity="other">SCANNING · %d seconds left</item>
+    </plurals>
+    <string name="nearby_state_complete">COMPLETE · Review observations below</string>
+    <string name="nearby_state_stopped">STOPPED · Last survey observations</string>
+    <string name="nearby_counts" tools:ignore="PluralsCandidate">%1$d Wi-Fi · %2$d Bluetooth · %3$d on this network</string>
+    <plurals name="nearby_leads">
+        <item quantity="one">%d lead to inspect</item>
+        <item quantity="other">%d leads to inspect</item>
+    </plurals>
+    <string name="nearby_leads_explain">Names, services or device descriptions that cameras commonly use. A lead is a reason to look closer, not proof. Many cameras show no lead, and ordinary devices sometimes do.</string>
+    <string name="nearby_no_leads_title">No leads in this survey</string>
+    <string name="nearby_no_leads">Nothing advertised a camera-like name, a video service or a video device role. That does not mean the room has no cameras: wired, offline or quiet cameras show nothing here.</string>
+    <string name="nearby_section_wifi">Wi-Fi access points</string>
+    <string name="nearby_section_ble">Bluetooth LE advertisements</string>
+    <string name="nearby_section_network">This Wi-Fi network</string>
+    <string name="nearby_wifi_note">Android normally limits foreground Wi-Fi scans to four per two minutes, and results can be cached. Devices connected to a network, including most cameras, never appear in this list.</string>
+    <string name="nearby_ble_note">Only devices that advertise appear. Names and signal strength do not establish identity.</string>
+    <string name="nearby_network_note">Devices on your connected Wi-Fi network that answered ONVIF or UPnP discovery, and advertised RTSP, HTTP or ONVIF services.</string>
+    <string name="nearby_wifi_empty">No access-point observations available.</string>
+    <string name="nearby_ble_empty">No BLE advertisements observed.</string>
+    <string name="nearby_network_empty">No replies or matching advertised services.</string>
+    <string name="nearby_more" tools:ignore="PluralsCandidate">%1$d more not shown.</string>
+    <string name="nearby_unnamed_wifi">Hidden or unnamed network</string>
+    <string name="nearby_unnamed_ble">Unnamed Bluetooth advertiser</string>
+    <string name="nearby_unnamed_onvif">ONVIF device</string>
+    <string name="nearby_unnamed_upnp">UPnP device</string>
+    <string name="nearby_unnamed_service">Unnamed service</string>
+    <string name="nearby_address_unavailable">address unavailable</string>
+    <string name="nearby_age_unknown">age unknown</string>
+    <string name="nearby_age_fresh">this survey, %1$.1f s old</string>
+    <string name="nearby_age_cached">cached, %1$.1f s old</string>
+    <string name="nearby_wifi_detail">%1$s · %2$d dBm · %3$d MHz · %4$s</string>
+    <string name="nearby_ble_detail">%1$s · %2$d dBm · seen %3$d s ago</string>
+    <string name="nearby_service_detail">%1$s · advertised; address not resolved</string>
+    <string name="nearby_service_detail_lost">%1$s · advertisement lost</string>
+    <string name="nearby_onvif_detail">%1$s · answered ONVIF discovery · %2$s</string>
+    <string name="nearby_onvif_detail_short">%1$s · answered ONVIF discovery</string>
+    <string name="nearby_upnp_detail">%1$s · answered UPnP discovery · %2$s</string>
+    <string name="nearby_upnp_detail_short">%1$s · answered UPnP discovery</string>
+    <string name="service_rtsp">RTSP video stream service</string>
+    <string name="service_onvif">ONVIF camera-control service</string>
+    <string name="service_http">HTTP web service</string>
+    <string name="hint_camera_name">Camera-like name</string>
+    <string name="hint_video_service">Video stream service</string>
+    <string name="hint_camera_role">Video device role</string>
+    <string name="nearby_follow">Follow signal</string>
+    <string name="nearby_follow_description">Follow the signal of %1$s</string>
+    <string name="nearby_saved_summary" tools:ignore="PluralsCandidate">Nearby scan · %1$d Wi-Fi, %2$d Bluetooth, %3$d on this network</string>
+    <string name="nearby_not_started">Not started.</string>
+    <string name="nearby_starting">Starting…</string>
+    <string name="nearby_wifi_unavailable">Wi-Fi scanning is unavailable on this device.</string>
+    <string name="nearby_wifi_needs_location_permission">Grant precise Location permission to inspect Wi-Fi scans.</string>
+    <string name="nearby_wifi_needs_location">Turn on Android Location to inspect Wi-Fi scans.</string>
+    <string name="nearby_wifi_off">Wi-Fi is off. Turn it on for an access-point survey.</string>
+    <string name="nearby_wifi_requested">One Wi-Fi scan requested; awaiting system results.</string>
+    <string name="nearby_wifi_updated">System scan updated; check each observation\'s age.</string>
+    <string name="nearby_wifi_cached">No new system scan. Cached observations may be shown.</string>
+    <string name="nearby_wifi_throttled">Wi-Fi scan not accepted (throttling, idle state or radio error). Cached results only.</string>
+    <string name="nearby_wifi_no_new_scan">Survey ended before a new system Wi-Fi scan arrived. Results may be cached.</string>
+    <string name="nearby_wifi_denied">Wi-Fi access denied. Check precise Location permission and the Location switch.</string>
+    <string name="nearby_wifi_failed">Wi-Fi scan could not start on this device.</string>
+    <string name="nearby_wifi_results_denied">Wi-Fi results denied; precise Location and Android Location must be enabled.</string>
+    <string name="nearby_wifi_results_unavailable">Wi-Fi results are currently unavailable.</string>
+    <string name="nearby_ble_needs_permission">Grant Nearby devices permission to inspect BLE advertisements.</string>
+    <string name="nearby_ble_needs_location">BLE scanning needs precise Location permission and Android Location enabled.</string>
+    <string name="nearby_ble_unavailable">Bluetooth LE is unavailable on this device.</string>
+    <string name="nearby_ble_off">Bluetooth is off. Turn it on to inspect BLE advertisements.</string>
+    <string name="nearby_ble_scanner_unavailable">Bluetooth LE scanner is unavailable.</string>
+    <string name="nearby_ble_listening">Listening for BLE advertisements; no pairing or connections.</string>
+    <string name="nearby_ble_ended">Bluetooth survey ended; results from this survey are shown below.</string>
+    <string name="nearby_ble_failed">BLE scan failed (Android error %1$d). Try again later.</string>
+    <string name="nearby_ble_denied">Bluetooth permission was denied or revoked.</string>
+    <string name="nearby_ble_start_failed">Bluetooth LE scan could not start.</string>
+    <string name="nearby_network_discovering">Asking this Wi-Fi network for ONVIF and UPnP devices and listening for advertised RTSP, HTTP and ONVIF services. No connections or logins.</string>
+    <string name="nearby_network_mdns_only">Listening for advertised RTSP, HTTP and ONVIF services. Connect to the room\'s Wi-Fi to also ask devices to identify themselves.</string>
+    <string name="nearby_network_unavailable">Local network discovery is unavailable. Connect to the room\'s Wi-Fi.</string>
+    <string name="nearby_network_finished">Discovery requests finished. Devices and services found so far: %1$d. Still listening for advertised services.</string>
+    <string name="nearby_network_failed">Discovery requests stopped early (%1$s). Advertised services may still appear.</string>
+    <string name="nearby_network_ended">Local network discovery ended. Devices and services found: %1$d.</string>
+
+    <!-- Following a Bluetooth signal -->
+    <string name="follow_back">All scan results</string>
+    <string name="follow_title">Follow a signal.</string>
+    <string name="follow_no_signal">— dBm</string>
+    <string name="follow_waiting">Waiting for an advertisement…</string>
+    <string name="follow_stronger">Getting stronger</string>
+    <string name="follow_weaker">Getting weaker</string>
+    <string name="follow_steady">Holding steady</string>
+    <string name="follow_dbm">%1$d dBm</string>
+    <string name="follow_chart_description">Signal history. Currently about %1$d dBm.</string>
+    <string name="follow_strongest">Strongest so far: %1$d dBm</string>
+    <string name="follow_running">Following · %1$d s left</string>
+    <string name="follow_start">Follow signal</string>
+    <string name="follow_stop">Stop following</string>
+    <string name="follow_save">Save to report</string>
+    <string name="follow_idle">Not following. Tap Follow signal to start.</string>
+    <string name="follow_listening">Listening for this device\'s advertisements. No pairing or connections.</string>
+    <string name="follow_stopped">Following stopped.</string>
+    <string name="follow_finished">Following ended after 60 seconds. Follow again to continue.</string>
+    <string name="follow_quiet">No advertisement for %1$d s. Move slowly. The device may have stopped advertising or changed its address, or Android may be limiting scans.</string>
+    <string name="follow_how_title">How to use it</string>
+    <string name="follow_how">Walk slowly around the room, holding the phone the same way. A stronger signal usually means a closer device or a clearer path; walls, bodies and reflections change readings. This is a direction to search, not a distance.</string>
+    <string name="follow_saved_summary">Followed %1$s · latest %2$d dBm · strongest %3$d dBm</string>
+
+    <!-- Sensors -->
+    <string name="sensors_back">All sensor tools</string>
+    <string name="sensors_title">Optional sensor tools.</string>
+    <string name="sensors_intro">These measurements add context. None of them can identify a camera.</string>
+    <string name="sensors_magnetic_title">Magnetic comparison</string>
+    <string name="sensors_magnetic_copy">Compare the field near an object. Metal and magnets also change the reading; this cannot identify a camera.</string>
+    <string name="sensors_open_magnetic">Open magnetic check</string>
+    <string name="sensors_readings_title">Sensor diagnostics</string>
+    <string name="sensors_readings_copy">Check which hardware streams are available and whether readings change.</string>
+    <string name="sensors_open_readings">Open sensor readings</string>
+    <string name="sensors_sound_title">Experimental sound check</string>
+    <string name="sensors_sound_copy">Observe high-frequency tones. There is no universal camera sound signature.</string>
+    <string name="sensors_open_sound">Open sound check</string>
+    <string name="magnetic_title">Compare magnetic field.</string>
+    <string name="magnetic_step1_title">1. Set a reference</string>
+    <string name="magnetic_step1">Move away from metal, chargers and magnets. Tap Set baseline and hold still for at least 3 seconds. If accuracy is low, move the phone in a figure-eight, then retry.</string>
+    <string name="magnetic_no_baseline">No baseline yet.</string>
+    <string name="magnetic_set_baseline">Set baseline</string>
+    <string name="magnetic_step2_title">2. Compare near an object</string>
+    <string name="magnetic_step2">Move close to the object, then away. Repeat. A change tells you the magnetic field changed, not what caused it.</string>
+    <string name="magnetic_waiting">Waiting for magnetometer…</string>
+    <string name="magnetic_caveat">Magnetic field is not radio signal strength. Ordinary metal and electronics can produce large changes.</string>
+    <string name="magnetic_reset_peak">Reset peak</string>
+    <string name="magnetic_save">Save reading</string>
+    <string name="magnetic_where_title">Where it helps</string>
+    <string name="magnetic_where">Most useful on objects that should contain no electronics, such as books, frames, soft toys or tissue boxes. A change there suggests metal, magnets or electronics inside.</string>
+    <string name="magnetic_reading">%1$.1f µT</string>
+    <string name="magnetic_reading_change">Change from baseline: %1$.1f µT</string>
+    <string name="magnetic_peak">Largest change since baseline: %1$.1f µT</string>
+    <string name="magnetic_chart_description">Magnetic field history. Currently %1$.1f µT.</string>
+    <string name="magnetic_nothing_to_save">No magnetic reading to save yet.</string>
+    <string name="magnetic_calibration_ready">Place the phone away from metal, then calibrate while still.</string>
+    <string name="magnetic_calibration_paused">Calibration paused. Start a fresh still-phone calibration.</string>
+    <string name="magnetic_calibration_needs_sensors">Calibration needs active magnetometer and accelerometer readings.</string>
+    <string name="magnetic_calibration_hold">Hold still for 3 seconds, away from metal and electronics.</string>
+    <string name="magnetic_calibration_low_accuracy">Magnetometer accuracy is low. Move away from metal; gently make a figure eight, then hold still.</string>
+    <string name="magnetic_calibration_motion">Motion detected or motion readings pending. Hold the phone still; the 3-second window restarts.</string>
+    <string name="magnetic_calibration_progress">Still-phone baseline: %1$d%% · samples: %2$d</string>
+    <string name="magnetic_baseline_set">Baseline %1$.1f µT • variation %2$.2f µT. Recalibrate when the environment changes.</string>
+    <string name="magnetic_unavailable">Magnetometer unavailable on this device.</string>
+    <string name="magnetic_status">Magnetometer: %1$s</string>
+    <string name="magnetic_field">Field %1$.1f µT • accuracy %2$s</string>
+    <string name="magnetic_change">Change from baseline %1$.1f µT</string>
+    <string name="magnetic_local_change">local magnetic change</string>
+    <string name="motion_waiting">Waiting for motion readings…</string>
+    <string name="motion_still">Phone is still. Sweep slowly after calibration.</string>
+    <string name="motion_moving">Move slowly. Hold still to establish a baseline.</string>
+    <string name="motion_no_gyroscope">Gyroscope unavailable; motion guidance uses acceleration only.</string>
+    <string name="readings_title">Know your hardware.</string>
+    <string name="readings_device">%1$s %2$s / Android %3$s</string>
+    <string name="readings_room_title">Room &amp; movement</string>
+    <string name="readings_waiting">Waiting for sensor readings…</string>
+    <string name="readings_access_title">Public sensor access</string>
+    <string name="readings_access">Every sensor exposed by Android is listed below, including unavailable or restricted streams. Light, proximity and motion help guide your sweep. Barometer and activity data provide context only. Fingerprint hardware and camera-internal autofocus/spectral sensors have no general raw sensor stream. NFC and GPS do not identify hidden cameras.</string>
+    <string name="readings_activity">Enable activity sensors</string>
+    <string name="readings_inventory_title">Live sensor inventory</string>
+    <string name="readings_loading">Loading sensor inventory…</string>
+    <string name="sensor_paused">Sensors paused</string>
+    <string name="sensor_paused_short">paused</string>
+    <string name="sensor_summary">Sensors exposed: %1$d • enabled: %2$d • with readings: %3$d</string>
+    <string name="sensor_light">Ambient light</string>
+    <string name="sensor_proximity">Proximity</string>
+    <string name="sensor_pressure">Pressure</string>
+    <string name="unit_lux">lux</string>
+    <string name="unit_cm">cm</string>
+    <string name="unit_hpa">hPa</string>
+    <string name="sensor_value">%1$s: %2$.1f %3$s</string>
+    <string name="sensor_value_status">%1$s: %2$s</string>
+    <string name="sensor_value_unavailable">%1$s: unavailable</string>
+    <string name="sensor_environment_note">These provide scanning context; they do not identify cameras.</string>
+    <string name="sensor_orientation">Yaw %1$d° • pitch %2$d° • roll %3$d°</string>
+    <string name="sensor_orientation_unavailable">Orientation unavailable</string>
+    <string name="sensor_orientation_waiting">Orientation awaiting reading</string>
+    <string name="sensor_wake_up">wake-up</string>
+    <string name="sensor_specs">Range %1$.3g • resolution %2$.3g • power %3$.2f mA</string>
+    <string name="sensor_last_reading">accuracy %1$s • last %2$.1f s ago</string>
+    <string name="sensor_raw">Raw:</string>
+    <string name="sensor_none">Android did not expose any SensorManager sensors.</string>
+    <string name="sensor_absent">Absent types: %1$s</string>
+    <string name="sensor_absent_none">none of the common types above</string>
+    <string name="sensor_inventory_note">Vendor and virtual sensors are listed as Android exposes them. Raw units follow the Android sensor type. Microphone, cameras, Wi-Fi and Bluetooth have separate controls.</string>
+    <string-array name="sensor_common_types">
+        <item>accelerometer</item>
+        <item>gyroscope</item>
+        <item>magnetometer</item>
+        <item>light</item>
+        <item>proximity</item>
+        <item>pressure</item>
+        <item>gravity</item>
+        <item>linear acceleration</item>
+        <item>rotation vector</item>
+        <item>steps</item>
+        <item>ambient temperature</item>
+        <item>humidity</item>
+        <item>heart rate</item>
+    </string-array>
+    <string name="sensor_mode_continuous">continuous</string>
+    <string name="sensor_mode_on_change">on change</string>
+    <string name="sensor_mode_one_shot">one shot</string>
+    <string name="sensor_mode_special">special trigger</string>
+    <string name="sensor_status_paused">Paused</string>
+    <string name="sensor_status_disconnected">Disconnected</string>
+    <string name="sensor_status_armed">Trigger armed</string>
+    <string name="sensor_status_awaiting">Enabled; awaiting event</string>
+    <string name="sensor_status_refused">Unavailable for this app (registration refused)</string>
+    <string name="sensor_status_activity_permission">Activity recognition permission needed</string>
+    <string name="sensor_status_restricted">Permission required or access restricted by Android</string>
+    <string name="sensor_status_failed">Could not enable this sensor</string>
+    <string name="sensor_status_received">Reading received</string>
+    <string name="accuracy_high">high</string>
+    <string name="accuracy_medium">medium</string>
+    <string name="accuracy_low">low</string>
+    <string name="accuracy_unreliable">unreliable</string>
+    <string name="accuracy_unknown">not reported</string>
+
+    <!-- Sound -->
+    <string name="sound_title">Experimental sound check.</string>
+    <string name="sound_what_title">What this measures</string>
+    <string name="sound_what">High-frequency tones from 15–22 kHz. Chargers, lights, insects and other devices can create tones. These readings cannot identify a camera.</string>
+    <string name="sound_off">Microphone off.</string>
+    <string name="sound_start">Enable microphone</string>
+    <string name="sound_stop">Stop microphone</string>
+    <string name="sound_save">Save reading</string>
+    <string name="sound_privacy">Audio is analyzed in memory. No recording is saved.</string>
+    <string name="sound_denied_retry">Microphone permission denied. Tap Enable microphone to retry.</string>
+    <string name="sound_permission_needed">Microphone permission is needed to inspect sound locally.</string>
+    <string name="sound_listening">Inspecting 15–22 kHz sound locally. Audio is never saved. Microphone filtering may hide tones.</string>
+    <string name="sound_stopped">Microphone stopped. No audio was saved.</string>
+    <string name="sound_48k_unavailable">48 kHz microphone capture is unavailable on this device.</string>
+    <string name="sound_init_failed">Microphone could not initialize. Check Android microphone access.</string>
+    <string name="sound_start_failed">Microphone did not start. It may be in use by another app.</string>
+    <string name="sound_stream_ended">Microphone stream ended (Android error %1$d). Restart to retry.</string>
+    <string name="sound_no_samples">No microphone samples arrived. Check Android microphone access and restart.</string>
+    <string name="sound_denied">Android denied microphone access. Grant microphone permission, then restart.</string>
+    <string name="sound_interrupted">Microphone capture was interrupted. Restart to retry.</string>
+    <string name="sound_unavailable">Microphone capture is unavailable. Check Android microphone access and restart.</string>
+    <string name="sound_clipping">Sound is clipping; move away from loud sources.</string>
+    <string name="sound_quiet">Very little sound received. The room may be quiet or Android may be silencing the microphone.</string>
+    <string name="sound_persistent_tone">Persistent high-frequency tone near %1$.1f kHz. Investigate the sound source.</string>
+    <string name="sound_no_tone">No persistent prominent tone in the sampled high-frequency band.</string>
+    <string name="sound_levels">Level %1$.0f dBFS • band peak %2$.1f kHz • %3$.0f dB above band floor</string>
+    <string name="sound_caveat">Chargers, displays and other electronics can make tones. Sound cannot identify a camera.</string>
+    <string name="sound_processing_caveat">Microphone processing can suppress high frequencies.</string>
+
+    <!-- Report -->
+    <string name="report_title">Keep your observations.</string>
+    <string name="report_private">Private until you share</string>
+    <string name="report_share_pdf">Share PDF report</string>
+    <string name="report_share_data">Share data (JSON)</string>
+    <string name="report_share_photos">Share photos</string>
+    <string name="report_addresses_hidden">Addresses: hidden</string>
+    <string name="report_addresses_included">Addresses: included</string>
+    <string name="report_addresses_note">Reports include network and device names. Device addresses are partly hidden unless you include them. Review a report before sharing it.</string>
+    <string name="report_note_label">Add a note</string>
+    <string name="report_note_hint">Object, room and what you observed…</string>
+    <string name="report_empty">Nothing saved yet. Save photos from Camera, scans from Nearby and readings from Sensors, or write a note.</string>
+    <string name="report_inspections_label">Inspections</string>
+    <string name="report_inspection_detail">Updated %1$s · %2$s</string>
+    <string name="report_current">Current</string>
+    <string name="report_open_inspection">Open</string>
+    <string name="report_new_inspection">Start a new inspection</string>
+    <string name="report_new_inspection_title">New inspection</string>
+    <string name="report_new_inspection_message">New photos, readings and notes will go to this inspection. Earlier inspections stay on this device until you delete them.</string>
+    <string name="report_delete_inspection_title">Delete this inspection?</string>
+    <string name="report_delete_inspection_message">Its observations and photos are deleted from this device.</string>
+    <string name="report_delete_all">Delete all saved evidence</string>
+    <string name="report_delete_all_title">Delete all local evidence?</string>
+    <string name="report_delete_all_message">This deletes every inspection, photo, note and cached report on this device. Copies you already shared are not affected.</string>
+    <string name="report_privacy_title">Privacy</string>
+    <string name="report_privacy">Camera frames and microphone samples stay in memory unless you save a photo. Saved photos, notes and readings stay in app-private storage. A nearby scan sends standard discovery requests on your Wi-Fi network but never connects to devices. Sharing uses the app you choose. No accounts, analytics, ads or cloud detection.</string>
+    <string name="report_version_title">LensGuard %1$s · evaluation build</string>
+    <string name="report_version">Designed for Pixel 9; adapts to other Android devices. Development-signed release. Hardware behavior still needs testing on a real Pixel 9. This app cannot guarantee a room is free of hidden cameras.</string>
+    <string name="report_preparing">Preparing report…</string>
+    <string name="report_failed">Could not create the report. Please retry.</string>
+    <string name="report_no_photos">No saved photos in this inspection.</string>
+    <string name="report_limitation">Inspection observations only. No measurement confirms a camera or proves its absence.</string>
+    <string name="observation_delete">Delete</string>
+    <string name="observation_delete_description">Delete observation: %1$s</string>
+    <string name="observation_delete_title">Delete this observation?</string>
+    <string name="observation_delete_message">Its photo, if any, is deleted from this device too.</string>
+    <string name="observation_photo_description">Saved inspection photo. Tap to enlarge.</string>
+    <string name="evidence_deleted">Saved evidence deleted.</string>
+    <string name="evidence_delete_failed">Some files could not be deleted. Retry.</string>
+
+    <!-- PDF report -->
+    <string name="pdf_title">LensGuard inspection report</string>
+    <string name="pdf_meta">Started %1$s · report created %2$s\nLensGuard %3$s on %4$s, Android %5$s</string>
+    <string name="pdf_addresses_included">Device addresses are included in this report.</string>
+    <string name="pdf_addresses_masked">Device addresses are partly hidden in this report.</string>
+    <string name="pdf_caution">These observations were collected with a phone. They are clues, not proof: LensGuard cannot confirm a hidden camera or show that a room is camera-free. Reflections, metal, magnets and ordinary radios produce many of these signals.</string>
+    <string name="pdf_summary">Summary</string>
+    <string name="pdf_summary_text">Places inspected: %1$d of %2$d. Marked for a closer look: %3$d. Observations: %4$d. Photos: %5$d.</string>
+    <string name="pdf_checklist">Checklist</string>
+    <string name="pdf_observations">Observations</string>
+    <string name="pdf_no_observations">No observations were saved.</string>
+    <string name="pdf_observation_header">%1$d. %2$s · %3$s</string>
+    <string name="pdf_note">Note: %1$s</string>
+    <string name="pdf_leads">Leads to follow up:</string>
+    <string name="pdf_unnamed">Unnamed</string>
+    <string name="pdf_method">How these observations were made</string>
+    <string name="pdf_method_text">Camera: small bright points in the live view are marked, and a light on/off comparison separates reflections of the phone\'s light from light sources. Nearby: Wi-Fi access points, Bluetooth LE advertisements, and devices on the connected Wi-Fi network that answered standard ONVIF or UPnP discovery or advertised RTSP, HTTP or ONVIF services; names are compared with words that camera products commonly use. Magnetic: change in field strength from a still-phone baseline. None of these methods has a measured detection rate.</string>
+    <string name="pdf_footer">LensGuard %1$s · %2$s</string>
+    <string name="pdf_page">Page %1$d of %2$d</string>
+</resources>

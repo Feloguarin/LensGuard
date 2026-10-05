@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.os.Process;
 
 import java.util.Arrays;
-import java.util.Locale;
 
 /** Optional microphone clue meter. Samples stay in RAM and are discarded on stop. */
 public final class AudioProbe {
@@ -43,7 +42,7 @@ public final class AudioProbe {
     public void start() {
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
-            postIdle("Microphone permission is needed to inspect sound locally.");
+            postIdle(context.getString(R.string.sound_permission_needed));
             return;
         }
         Session session;
@@ -54,7 +53,7 @@ public final class AudioProbe {
             generation++;
             session.generation = generation;
             session.thread = new Thread(() -> capture(session), "LensGuard-audio");
-            post(session, "Inspecting 15–22 kHz sound locally. Audio is never saved. Microphone filtering may hide tones.");
+            post(session, context.getString(R.string.sound_listening));
             session.thread.start();
         }
     }
@@ -76,7 +75,7 @@ public final class AudioProbe {
             }
         }
         // The worker uses non-blocking reads and releases the recorder in its finally block.
-        if (session != null) postIdle("Microphone stopped. No audio was saved.");
+        if (session != null) postIdle(context.getString(R.string.sound_stopped));
     }
 
     private void capture(Session session) {
@@ -86,14 +85,14 @@ public final class AudioProbe {
         try {
             if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                     != PackageManager.PERMISSION_GRANTED) {
-                fail(session, "Microphone permission is needed to inspect sound locally.");
+                fail(session, context.getString(R.string.sound_permission_needed));
                 return;
             }
             Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
             int minimumBytes = AudioRecord.getMinBufferSize(SAMPLE_RATE,
                     AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
             if (minimumBytes <= 0) {
-                fail(session, "48 kHz microphone capture is unavailable on this device.");
+                fail(session, context.getString(R.string.sound_48k_unavailable));
                 return;
             }
             AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -104,7 +103,7 @@ public final class AudioProbe {
             recorder = new AudioRecord(source, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT, Math.max(minimumBytes, FRAME_SAMPLES * 8));
             if (recorder.getState() != AudioRecord.STATE_INITIALIZED) {
-                fail(session, "Microphone could not initialize. Check Android microphone access.");
+                fail(session, context.getString(R.string.sound_init_failed));
                 return;
             }
             synchronized (lock) {
@@ -113,7 +112,7 @@ public final class AudioProbe {
                 recorder.startRecording();
             }
             if (recorder.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
-                fail(session, "Microphone did not start. It may be in use by another app.");
+                fail(session, context.getString(R.string.sound_start_failed));
                 return;
             }
             int filled = 0, frameNumber = 0, sustained = 0;
@@ -122,12 +121,12 @@ public final class AudioProbe {
             while (!session.cancelled) {
                 int read = recorder.read(incoming, 0, incoming.length, AudioRecord.READ_NON_BLOCKING);
                 if (read < 0) {
-                    if (!session.cancelled) fail(session, "Microphone stream ended (Android error " + read + "). Restart to retry.");
+                    if (!session.cancelled) fail(session, context.getString(R.string.sound_stream_ended, read));
                     break;
                 }
                 if (read == 0) {
                     if (android.os.SystemClock.elapsedRealtime() - lastSamplesAt > 3000) {
-                        fail(session, "No microphone samples arrived. Check Android microphone access and restart.");
+                        fail(session, context.getString(R.string.sound_no_samples));
                         break;
                     }
                     Thread.sleep(8);
@@ -157,12 +156,12 @@ public final class AudioProbe {
                 }
             }
         } catch (SecurityException exception) {
-            fail(session, "Android denied microphone access. Grant microphone permission, then restart.");
+            fail(session, context.getString(R.string.sound_denied));
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            if (!session.cancelled) fail(session, "Microphone capture was interrupted. Restart to retry.");
+            if (!session.cancelled) fail(session, context.getString(R.string.sound_interrupted));
         } catch (RuntimeException exception) {
-            fail(session, "Microphone capture is unavailable. Check Android microphone access and restart.");
+            fail(session, context.getString(R.string.sound_unavailable));
         } finally {
             Arrays.fill(frame, (short) 0);
             Arrays.fill(incoming, (short) 0);
@@ -177,18 +176,15 @@ public final class AudioProbe {
         }
     }
 
-    private static String describe(DetectionMath.ToneResult result, int sustained, boolean unprocessed) {
+    private String describe(DetectionMath.ToneResult result, int sustained, boolean unprocessed) {
         String status;
-        if (result.clipped) status = "Sound is clipping; move away from loud sources.";
-        else if (result.rmsDbfs < -85) status = "Very little sound received. The room may be quiet or Android may be silencing the microphone.";
-        else if (sustained >= 3) status = String.format(Locale.US,
-                "Persistent high-frequency tone near %.1f kHz. Investigate the sound source.", result.frequencyHz / 1000);
-        else status = "No persistent prominent tone in the sampled high-frequency band.";
-        return status + String.format(Locale.US,
-                "\nLevel %.0f dBFS • band peak %.1f kHz • %.0f dB above band floor",
-                result.rmsDbfs, result.frequencyHz / 1000, result.peakToFloorDb)
-                + "\nChargers, displays and other electronics can make tones. Sound cannot identify a camera."
-                + (unprocessed ? "" : " Microphone processing can suppress high frequencies.");
+        if (result.clipped) status = context.getString(R.string.sound_clipping);
+        else if (result.rmsDbfs < -85) status = context.getString(R.string.sound_quiet);
+        else if (sustained >= 3) status = context.getString(R.string.sound_persistent_tone, result.frequencyHz / 1000);
+        else status = context.getString(R.string.sound_no_tone);
+        return status + "\n" + context.getString(R.string.sound_levels, result.rmsDbfs, result.frequencyHz / 1000,
+                result.peakToFloorDb) + "\n" + context.getString(R.string.sound_caveat)
+                + (unprocessed ? "" : " " + context.getString(R.string.sound_processing_caveat));
     }
 
     private static void safeStop(AudioRecord recorder) {

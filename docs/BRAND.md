@@ -23,6 +23,7 @@ The banner is an AI-generated conceptual illustration, not an app screenshot or 
 | --- | --- | --- |
 | Charcoal | `#0D1417` | Primary background |
 | Slate | `#182327` | Cards and surfaces |
+| Raised slate | `#223136` | Buttons and raised surfaces on cards |
 | Lens lime | `#B7F779` | Active controls and identity |
 | Soft white | `#EFF5EF` | Main text |
 | Muted gray | `#9EB1B5` | Supporting text |

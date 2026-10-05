@@ -1,9 +1,12 @@
 package com.feloguarin.lensguard;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.content.Context;
 import android.os.Looper;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -20,36 +23,50 @@ import org.robolectric.annotation.LooperMode;
 @LooperMode(LooperMode.Mode.PAUSED)
 public class WirelessLifecycleTest {
     @Test public void countdownFinishesAndDoesNotPublishAfterStop() {
-        List<String> updates = new ArrayList<>();
-        WirelessProbe probe = new WirelessProbe(RuntimeEnvironment.getApplication(), updates::add);
-        assertTrue(probe.summary().startsWith("READY"));
+        Context context = RuntimeEnvironment.getApplication();
+        List<WirelessProbe.Survey> updates = new ArrayList<>();
+        WirelessProbe probe = new WirelessProbe(context, updates::add);
+        assertEquals(WirelessProbe.READY, probe.survey().state);
         probe.start();
         assertTrue(probe.isRunning());
-        assertTrue(probe.summary().contains("15 seconds left"));
+        assertEquals(15, probe.survey().remainingSeconds);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5));
-        assertTrue(probe.summary().contains("10 seconds left"));
+        assertEquals(10, probe.survey().remainingSeconds);
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10));
         assertFalse(probe.isRunning());
-        assertTrue(updates.get(updates.size() - 1).contains("survey complete"));
-        assertFalse(updates.get(updates.size() - 1).contains("Discovering advertised"));
-        assertFalse(updates.get(updates.size() - 1).contains("Listening for BLE"));
+        WirelessProbe.Survey last = updates.get(updates.size() - 1);
+        assertEquals(WirelessProbe.COMPLETE, last.state);
+        assertFalse(last.running());
+        assertNotEquals(context.getString(R.string.nearby_ble_listening), last.bleStatus);
+        assertNotEquals(context.getString(R.string.nearby_network_discovering), last.networkStatus);
         int count = updates.size();
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3));
-        assertTrue(updates.size() == count);
+        assertEquals(count, updates.size());
     }
 
     @Test public void stoppingEarlyCancelsCountdownAndAllowsAnotherSurvey() {
-        List<String> updates = new ArrayList<>();
+        List<WirelessProbe.Survey> updates = new ArrayList<>();
         WirelessProbe probe = new WirelessProbe(RuntimeEnvironment.getApplication(), updates::add);
         probe.start();
         probe.stop();
         assertFalse(probe.isRunning());
-        assertTrue(updates.get(updates.size() - 1).contains("Survey stopped"));
+        assertEquals(WirelessProbe.STOPPED, updates.get(updates.size() - 1).state);
         int count = updates.size();
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(16));
-        assertTrue(updates.size() == count);
+        assertEquals(count, updates.size());
         probe.start();
-        assertTrue(probe.summary().contains("15 seconds left"));
+        assertEquals(15, probe.survey().remainingSeconds);
+        assertTrue(probe.survey().leads().isEmpty());
         probe.stop();
+    }
+
+    @Test public void surveyExportsStructuredResults() throws Exception {
+        WirelessProbe probe = new WirelessProbe(RuntimeEnvironment.getApplication(), survey -> { });
+        probe.start();
+        probe.stop();
+        org.json.JSONObject json = probe.survey().toJson();
+        assertEquals("stopped", json.getString("state"));
+        assertEquals(0, json.getJSONArray("bluetooth").length());
+        assertTrue(json.has("networkStatus"));
     }
 }

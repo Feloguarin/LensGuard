@@ -26,13 +26,29 @@ jobs:
       - uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
       - name: Install SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
-      - name: Generate evaluation signing identity
-        run: sh scripts/prepare-development-key.sh
+      # Pushes to main use the persistent release key when the repository provides one, so installed
+      # builds update in place. Pull requests never receive it and keep a temporary evaluation key.
+      - name: Prepare signing identity
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LENSGUARD_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p dist
+          if [ -n "$KEYSTORE_BASE64" ] && [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lensguard-release.p12"
+            echo "LENSGUARD_KEYSTORE=$RUNNER_TEMP/lensguard-release.p12" >> "$GITHUB_ENV"
+            echo persistent > dist/signing-mode.txt
+          else
+            sh scripts/prepare-development-key.sh
+            echo evaluation > dist/signing-mode.txt
+          fi
       - name: Lint, unit tests and installable release APK
+        env:
+          LENSGUARD_STORE_PASSWORD: ${{ secrets.LENSGUARD_STORE_PASSWORD }}
+          LENSGUARD_KEY_ALIAS: ${{ secrets.LENSGUARD_KEY_ALIAS }}
+          LENSGUARD_KEY_PASSWORD: ${{ secrets.LENSGUARD_KEY_PASSWORD }}
         run: ./gradlew --no-daemon lint test assembleRelease
       - name: Verify APK signing and prepare checksums
         run: |
-          mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk dist/LensGuard.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LensGuard.apk > dist/signing-certificate.txt
           (cd dist && sha256sum LensGuard.apk > SHA256SUMS.txt)
@@ -65,7 +81,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle)
+          cp .github/release-notes.md "$RUNNER_TEMP/notes.md"
+          if [ "$(cat dist/signing-mode.txt)" = persistent ]; then
+            printf '\n**Signing:** signed with the persistent LensGuard release key. Later releases signed with the same key install as in-place updates.\n' >> "$RUNNER_TEMP/notes.md"
+          else
+            printf '\n**Signing:** evaluation build signed with a temporary development key. A later evaluation build may require uninstalling this one; export your evidence first.\n' >> "$RUNNER_TEMP/notes.md"
+          fi
           gh release create "evaluation-${GITHUB_RUN_NUMBER}" dist/LensGuard.apk dist/SHA256SUMS.txt dist/signing-certificate.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "LensGuard 1.1.0 · evaluation ${GITHUB_RUN_NUMBER}" --latest \
-            --notes-file .github/release-notes.md
+            --title "LensGuard ${VERSION} · evaluation ${GITHUB_RUN_NUMBER}" --latest \
+            --notes-file "$RUNNER_TEMP/notes.md"

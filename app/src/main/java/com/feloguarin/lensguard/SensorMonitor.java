@@ -16,7 +16,6 @@ import android.os.SystemClock;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /** Foreground-only inventory and readings from every publicly exposed Android sensor. */
@@ -32,16 +31,21 @@ public final class SensorMonitor implements SensorEventListener {
         public final String calibration;
         public final double magneticMicroTesla;
         public final double magneticDeltaMicroTesla;
+        public final double baselineMicroTesla;
+        /** Gyroscope magnitude in rad/s, or NaN when no fresh reading exists. */
+        public final double rotationRate;
         public final boolean stationary;
         public final boolean calibrated;
         public final boolean calibrating;
+        public final boolean running;
         public final int sensorCount;
         public final int liveSensorCount;
 
         private Snapshot(String summary, String inventory, String magnetic, String environment,
                          String motion, String calibration, double magneticMicroTesla,
-                         double magneticDeltaMicroTesla, boolean stationary, boolean calibrated,
-                         boolean calibrating, int sensorCount, int liveSensorCount) {
+                         double magneticDeltaMicroTesla, double baselineMicroTesla, double rotationRate,
+                         boolean stationary, boolean calibrated, boolean calibrating, boolean running,
+                         int sensorCount, int liveSensorCount) {
             this.summary = summary;
             this.inventory = inventory;
             this.magnetic = magnetic;
@@ -50,17 +54,23 @@ public final class SensorMonitor implements SensorEventListener {
             this.calibration = calibration;
             this.magneticMicroTesla = magneticMicroTesla;
             this.magneticDeltaMicroTesla = magneticDeltaMicroTesla;
+            this.baselineMicroTesla = baselineMicroTesla;
+            this.rotationRate = rotationRate;
             this.stationary = stationary;
             this.calibrated = calibrated;
             this.calibrating = calibrating;
+            this.running = running;
             this.sensorCount = sensorCount;
             this.liveSensorCount = liveSensorCount;
         }
     }
 
+    private static final int PAUSED = 0, DISCONNECTED = 1, ARMED = 2, AWAITING = 3, REFUSED = 4,
+            ACTIVITY_PERMISSION = 5, RESTRICTED = 6, FAILED = 7, RECEIVED = 8;
+
     private static final class Reading {
         final Sensor sensor;
-        String status = "Paused";
+        int status = PAUSED;
         float[] values;
         long timestamp;
         int accuracy = -1;
@@ -85,7 +95,7 @@ public final class SensorMonitor implements SensorEventListener {
     private double baselineSpread;
     private boolean running;
     private boolean calibrating;
-    private String calibrationMessage = "Place the phone away from metal, then calibrate while still.";
+    private String calibrationMessage;
 
     private final Runnable ticker = new Runnable() {
         @Override public void run() {
@@ -121,7 +131,7 @@ public final class SensorMonitor implements SensorEventListener {
                     Reading reading = readings.get(sensor);
                     if (reading != null) {
                         reading.registered = false;
-                        reading.status = "Disconnected";
+                        reading.status = DISCONNECTED;
                     }
                     selectPrimarySensors();
                 }
@@ -131,6 +141,7 @@ public final class SensorMonitor implements SensorEventListener {
         this.context = context.getApplicationContext();
         this.manager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         this.listener = listener;
+        calibrationMessage = this.context.getString(R.string.magnetic_calibration_ready);
         refreshInventory();
         selectPrimarySensors();
     }
@@ -165,12 +176,12 @@ public final class SensorMonitor implements SensorEventListener {
             }
             for (Reading reading : readings.values()) {
                 reading.registered = false;
-                reading.status = "Paused";
+                reading.status = PAUSED;
             }
             if (calibrating) {
                 calibrating = false;
                 calibrationWindow.reset();
-                calibrationMessage = "Calibration paused. Start a fresh still-phone calibration.";
+                calibrationMessage = context.getString(R.string.magnetic_calibration_paused);
             }
             publish();
         });
@@ -182,10 +193,10 @@ public final class SensorMonitor implements SensorEventListener {
             baseline = Double.NaN;
             if (!running || magnetometer == null || accelerometer == null) {
                 calibrating = false;
-                calibrationMessage = "Calibration needs active magnetometer and accelerometer readings.";
+                calibrationMessage = context.getString(R.string.magnetic_calibration_needs_sensors);
             } else {
                 calibrating = true;
-                calibrationMessage = "Hold still for 3 seconds, away from metal and electronics.";
+                calibrationMessage = context.getString(R.string.magnetic_calibration_hold);
             }
             publish();
         });
@@ -232,9 +243,9 @@ public final class SensorMonitor implements SensorEventListener {
         if (manager == null) return null;
         Sensor defaultSensor = manager.getDefaultSensor(type);
         Reading defaultReading = readings.get(defaultSensor);
-        if (defaultReading != null && !"Disconnected".equals(defaultReading.status)) return defaultSensor;
+        if (defaultReading != null && defaultReading.status != DISCONNECTED) return defaultSensor;
         for (Reading reading : readings.values()) {
-            if (reading.sensor.getType() == type && !"Disconnected".equals(reading.status)) {
+            if (reading.sensor.getType() == type && reading.status != DISCONNECTED) {
                 return reading.sensor;
             }
         }
@@ -249,7 +260,7 @@ public final class SensorMonitor implements SensorEventListener {
                 && context.checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
                 != PackageManager.PERMISSION_GRANTED) {
             reading.registered = false;
-            reading.status = "Activity recognition permission needed";
+            reading.status = ACTIVITY_PERMISSION;
             return;
         }
         try {
@@ -257,15 +268,13 @@ public final class SensorMonitor implements SensorEventListener {
             reading.registered = oneShot
                     ? manager.requestTriggerSensor(triggerListener, reading.sensor)
                     : manager.registerListener(this, reading.sensor, 60_000, main);
-            reading.status = reading.registered
-                    ? (oneShot ? "Trigger armed" : "Enabled; awaiting event")
-                    : "Unavailable for this app (registration refused)";
+            reading.status = reading.registered ? (oneShot ? ARMED : AWAITING) : REFUSED;
         } catch (SecurityException exception) {
             reading.registered = false;
-            reading.status = "Permission required or access restricted by Android";
+            reading.status = RESTRICTED;
         } catch (RuntimeException exception) {
             reading.registered = false;
-            reading.status = "Could not enable this sensor";
+            reading.status = FAILED;
         }
     }
 
@@ -275,7 +284,7 @@ public final class SensorMonitor implements SensorEventListener {
         reading.values = values;
         reading.timestamp = timestamp;
         reading.accuracy = accuracy;
-        reading.status = "Reading received";
+        reading.status = RECEIVED;
         long now = SystemClock.elapsedRealtimeNanos();
         if (sensor == accelerometer && values.length >= 3) {
             double distance = DetectionMath.vectorDistance(values, lastAcceleration);
@@ -294,17 +303,15 @@ public final class SensorMonitor implements SensorEventListener {
             boolean usable = accuracy >= SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM;
             boolean complete = calibrationWindow.add(DetectionMath.magnitude(values), timestamp,
                     still && usable);
-            if (!usable) calibrationMessage = "Magnetometer accuracy is low. Move away from metal; gently make a figure eight, then hold still.";
-            else if (!still) calibrationMessage = "Motion detected or motion readings pending. Hold the phone still; the 3-second window restarts.";
-            else calibrationMessage = String.format(Locale.US, "Still-phone baseline: %.0f%% (%d samples)",
-                        calibrationWindow.progress() * 100, calibrationWindow.sampleCount());
+            if (!usable) calibrationMessage = context.getString(R.string.magnetic_calibration_low_accuracy);
+            else if (!still) calibrationMessage = context.getString(R.string.magnetic_calibration_motion);
+            else calibrationMessage = context.getString(R.string.magnetic_calibration_progress,
+                        Math.round(calibrationWindow.progress() * 100), calibrationWindow.sampleCount());
             if (complete) {
                 baseline = calibrationWindow.mean();
                 baselineSpread = calibrationWindow.standardDeviation();
                 calibrating = false;
-                calibrationMessage = String.format(Locale.US,
-                        "Baseline %.1f µT • variation %.2f µT. Recalibrate when the environment changes.",
-                        baseline, baselineSpread);
+                calibrationMessage = context.getString(R.string.magnetic_baseline_set, baseline, baselineSpread);
             }
         }
     }
@@ -327,26 +334,29 @@ public final class SensorMonitor implements SensorEventListener {
         return reading == null ? Double.NaN : DetectionMath.magnitude(reading.values);
     }
 
-    private String scalar(int type, String label, String unit) {
+    private String scalar(int type, int label, int unit) {
         Sensor sensor = select(type);
-        if (sensor == null) return label + ": unavailable";
+        String name = context.getString(label);
+        if (sensor == null) return context.getString(R.string.sensor_value_unavailable, name);
         Reading reading = readings.get(sensor);
-        if (reading.values == null || reading.values.length == 0) return label + ": " + reading.status;
-        return String.format(Locale.US, "%s: %.1f %s", label, reading.values[0], unit);
+        if (reading.values == null || reading.values.length == 0) {
+            return context.getString(R.string.sensor_value_status, name, status(reading.status));
+        }
+        return context.getString(R.string.sensor_value, name, reading.values[0], context.getString(unit));
     }
 
     private String orientation() {
         Sensor sensor = select(Sensor.TYPE_ROTATION_VECTOR);
         if (sensor == null) sensor = select(Sensor.TYPE_GAME_ROTATION_VECTOR);
         Reading reading = readings.get(sensor);
-        if (reading == null) return "Orientation unavailable";
-        if (reading.values == null || reading.values.length < 3) return "Orientation awaiting reading";
+        if (reading == null) return context.getString(R.string.sensor_orientation_unavailable);
+        if (reading.values == null || reading.values.length < 3) return context.getString(R.string.sensor_orientation_waiting);
         float[] matrix = new float[9];
         float[] angles = new float[3];
         SensorManager.getRotationMatrixFromVector(matrix, reading.values);
         SensorManager.getOrientation(matrix, angles);
-        return String.format(Locale.US, "Yaw %.0f° • pitch %.0f° • roll %.0f°",
-                Math.toDegrees(angles[0]), Math.toDegrees(angles[1]), Math.toDegrees(angles[2]));
+        return context.getString(R.string.sensor_orientation, Math.round(Math.toDegrees(angles[0])),
+                Math.round(Math.toDegrees(angles[1])), Math.round(Math.toDegrees(angles[2])));
     }
 
     private void publish() {
@@ -359,58 +369,70 @@ public final class SensorMonitor implements SensorEventListener {
             Sensor sensor = reading.sensor;
             inventory.append(sensor.getName()).append("\n")
                     .append(sensor.getStringType()).append(" • ").append(sensor.getVendor())
-                    .append(sensor.isWakeUpSensor() ? " • wake-up" : "")
+                    .append(sensor.isWakeUpSensor() ? " • " + context.getString(R.string.sensor_wake_up) : "")
                     .append(" • ").append(reportingMode(sensor)).append("\n")
-                    .append(String.format(Locale.US, "Range %.3g • resolution %.3g • power %.2f mA\n",
-                            sensor.getMaximumRange(), sensor.getResolution(), sensor.getPower()))
-                    .append(reading.status);
+                    .append(context.getString(R.string.sensor_specs, sensor.getMaximumRange(),
+                            sensor.getResolution(), sensor.getPower())).append("\n")
+                    .append(status(reading.status));
             if (reading.values != null) {
-                inventory.append(" • accuracy ").append(accuracyName(reading.accuracy))
-                        .append(String.format(Locale.US, " • last %.1fs ago\n", Math.max(0, now - reading.timestamp) / 1e9))
-                        .append("Raw: ");
+                inventory.append(" • ").append(context.getString(R.string.sensor_last_reading,
+                        accuracyName(reading.accuracy), Math.max(0, now - reading.timestamp) / 1e9)).append("\n")
+                        .append(context.getString(R.string.sensor_raw)).append(' ');
                 for (int i = 0; i < reading.values.length; i++) {
                     if (i > 0) inventory.append(", ");
-                    inventory.append(String.format(Locale.US, "%.4g", reading.values[i]));
+                    inventory.append(String.format(java.util.Locale.ROOT, "%.4g", reading.values[i]));
                 }
             }
             inventory.append("\n\n");
         }
-        if (readings.isEmpty()) inventory.append("Android did not expose any SensorManager sensors.\n");
-        inventory.append("Absent types: ").append(absentTypes())
-                .append("\nVendor and virtual sensors are listed as Android exposes them. Raw units follow the Android sensor type. ")
-                .append("Microphone, cameras, Wi-Fi and Bluetooth have separate controls.\n");
+        if (readings.isEmpty()) inventory.append(context.getString(R.string.sensor_none)).append('\n');
+        inventory.append(context.getString(R.string.sensor_absent, absentTypes())).append('\n')
+                .append(context.getString(R.string.sensor_inventory_note)).append('\n');
 
         double magnetic = valueMagnitude(magnetometer);
         double delta = Double.isFinite(baseline) && Double.isFinite(magnetic)
                 ? Math.abs(magnetic - baseline) : Double.NaN;
         Reading magneticReading = readings.get(magnetometer);
         String magneticText;
-        if (magnetometer == null) magneticText = "Magnetometer unavailable on this device.";
-        else if (!Double.isFinite(magnetic)) magneticText = "Magnetometer: " + magneticReading.status;
-        else {
-            magneticText = String.format(Locale.US, "Field %.1f µT • accuracy %s", magnetic,
-                    accuracyName(magneticReading.accuracy));
+        if (magnetometer == null) magneticText = context.getString(R.string.magnetic_unavailable);
+        else if (!Double.isFinite(magnetic)) {
+            magneticText = context.getString(R.string.magnetic_status, status(magneticReading.status));
+        } else {
+            magneticText = context.getString(R.string.magnetic_field, magnetic, accuracyName(magneticReading.accuracy));
             if (Double.isFinite(delta)) {
-                magneticText += String.format(Locale.US, "\nChange from baseline %.1f µT", delta);
-                if (delta > Math.max(15, baselineSpread * 5)) magneticText += " • local magnetic change";
+                magneticText += "\n" + context.getString(R.string.magnetic_change, delta);
+                if (delta > Math.max(15, baselineSpread * 5)) magneticText += " • " + context.getString(R.string.magnetic_local_change);
             }
-            magneticText += "\nMagnets, metal and ordinary electronics can cause changes. A magnetometer cannot identify a camera or measure RF.";
         }
         boolean still = stationary(now);
-        String motion = !running ? "Sensors paused" : still
-                ? "Phone is still. Sweep slowly after calibration."
-                : "Move slowly. Hold still to establish a baseline.";
-        if (gyroscope == null) motion += " Gyroscope unavailable; motion guidance uses acceleration only.";
+        String motion = !running ? context.getString(R.string.sensor_paused) : context.getString(still
+                ? R.string.motion_still : R.string.motion_moving);
+        if (gyroscope == null) motion += " " + context.getString(R.string.motion_no_gyroscope);
         motion += "\n" + orientation();
-        String environment = scalar(Sensor.TYPE_LIGHT, "Ambient light", "lux") + "\n"
-                + scalar(Sensor.TYPE_PROXIMITY, "Proximity", "cm") + "\n"
-                + scalar(Sensor.TYPE_PRESSURE, "Pressure", "hPa")
-                + "\nThese provide scanning context; they do not identify cameras.";
-        String summary = String.format(Locale.US, "%d exposed sensors • %d enabled • %d with readings%s",
-                readings.size(), enabled, live, running ? "" : " • paused");
+        String environment = scalar(Sensor.TYPE_LIGHT, R.string.sensor_light, R.string.unit_lux) + "\n"
+                + scalar(Sensor.TYPE_PROXIMITY, R.string.sensor_proximity, R.string.unit_cm) + "\n"
+                + scalar(Sensor.TYPE_PRESSURE, R.string.sensor_pressure, R.string.unit_hpa) + "\n"
+                + context.getString(R.string.sensor_environment_note);
+        String summary = context.getString(R.string.sensor_summary, readings.size(), enabled, live)
+                + (running ? "" : " • " + context.getString(R.string.sensor_paused_short));
+        double rotation = gyroscope != null && fresh(gyroscope, now) ? valueMagnitude(gyroscope) : Double.NaN;
         listener.onUpdate(new Snapshot(summary, inventory.toString(), magneticText, environment,
-                motion, calibrationMessage, magnetic, delta, still, Double.isFinite(baseline),
-                calibrating, readings.size(), live));
+                motion, calibrationMessage, magnetic, delta, baseline, rotation, still,
+                Double.isFinite(baseline), calibrating, running, readings.size(), live));
+    }
+
+    private String status(int status) {
+        switch (status) {
+            case DISCONNECTED: return context.getString(R.string.sensor_status_disconnected);
+            case ARMED: return context.getString(R.string.sensor_status_armed);
+            case AWAITING: return context.getString(R.string.sensor_status_awaiting);
+            case REFUSED: return context.getString(R.string.sensor_status_refused);
+            case ACTIVITY_PERMISSION: return context.getString(R.string.sensor_status_activity_permission);
+            case RESTRICTED: return context.getString(R.string.sensor_status_restricted);
+            case FAILED: return context.getString(R.string.sensor_status_failed);
+            case RECEIVED: return context.getString(R.string.sensor_status_received);
+            default: return context.getString(R.string.sensor_status_paused);
+        }
     }
 
     private String absentTypes() {
@@ -418,35 +440,33 @@ public final class SensorMonitor implements SensorEventListener {
                 Sensor.TYPE_LIGHT, Sensor.TYPE_PROXIMITY, Sensor.TYPE_PRESSURE, Sensor.TYPE_GRAVITY,
                 Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_STEP_COUNTER,
                 Sensor.TYPE_AMBIENT_TEMPERATURE, Sensor.TYPE_RELATIVE_HUMIDITY, Sensor.TYPE_HEART_RATE};
-        String[] names = {"accelerometer", "gyroscope", "magnetometer", "light", "proximity", "pressure",
-                "gravity", "linear acceleration", "rotation vector", "steps", "ambient temperature",
-                "humidity", "heart rate"};
+        String[] names = context.getResources().getStringArray(R.array.sensor_common_types);
         StringBuilder missing = new StringBuilder();
-        for (int i = 0; i < types.length; i++) {
+        for (int i = 0; i < types.length && i < names.length; i++) {
             if (select(types[i]) == null) {
                 if (missing.length() > 0) missing.append(", ");
                 missing.append(names[i]);
             }
         }
-        return missing.length() == 0 ? "none of the common types above" : missing.toString();
+        return missing.length() == 0 ? context.getString(R.string.sensor_absent_none) : missing.toString();
     }
 
-    private static String reportingMode(Sensor sensor) {
+    private String reportingMode(Sensor sensor) {
         switch (sensor.getReportingMode()) {
-            case Sensor.REPORTING_MODE_CONTINUOUS: return "continuous";
-            case Sensor.REPORTING_MODE_ON_CHANGE: return "on change";
-            case Sensor.REPORTING_MODE_ONE_SHOT: return "one shot";
-            default: return "special trigger";
+            case Sensor.REPORTING_MODE_CONTINUOUS: return context.getString(R.string.sensor_mode_continuous);
+            case Sensor.REPORTING_MODE_ON_CHANGE: return context.getString(R.string.sensor_mode_on_change);
+            case Sensor.REPORTING_MODE_ONE_SHOT: return context.getString(R.string.sensor_mode_one_shot);
+            default: return context.getString(R.string.sensor_mode_special);
         }
     }
 
-    private static String accuracyName(int accuracy) {
+    private String accuracyName(int accuracy) {
         switch (accuracy) {
-            case SensorManager.SENSOR_STATUS_ACCURACY_HIGH: return "high";
-            case SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM: return "medium";
-            case SensorManager.SENSOR_STATUS_ACCURACY_LOW: return "low";
-            case SensorManager.SENSOR_STATUS_UNRELIABLE: return "unreliable";
-            default: return "not reported";
+            case SensorManager.SENSOR_STATUS_ACCURACY_HIGH: return context.getString(R.string.accuracy_high);
+            case SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM: return context.getString(R.string.accuracy_medium);
+            case SensorManager.SENSOR_STATUS_ACCURACY_LOW: return context.getString(R.string.accuracy_low);
+            case SensorManager.SENSOR_STATUS_UNRELIABLE: return context.getString(R.string.accuracy_unreliable);
+            default: return context.getString(R.string.accuracy_unknown);
         }
     }
 }

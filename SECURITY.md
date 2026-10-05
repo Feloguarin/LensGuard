@@ -1,6 +1,6 @@
 # Security and sensitive reports
 
-LensGuard is evaluation software. The current 1.0.0 code line is the version under active development; there is no guaranteed security response time or production assurance.
+LensGuard is evaluation software. The current 2.0.0 code line is the version under active development; there is no guaranteed security response time or production assurance.
 
 Please do not disclose signing keys, personal photos, raw room reports, network identifiers or exploit details in a public issue.
 
@@ -8,4 +8,4 @@ For a sensitive vulnerability, check the repository's **Security → Advisories 
 
 Include the release tag/commit, Android version, affected behavior and a minimal reproduction once a private channel is established. Ordinary reproducible bugs that contain no sensitive information can use the public bug template.
 
-Release APKs are development-signed. Signing identity can change between evaluation builds; APK checksum/certificate files are published with each release. A checksum proves that a file matches the published asset, not independent trust in the publisher. Private production signing keys must never be committed or included in release artifacts.
+From 2.0.0, release APKs are signed with a permanent release key held in repository secrets (certificate SHA-256 `FF:BD:95:84:8D:D9:A6:E6:15:97:0A:26:22:E6:7A:BD:A0:D6:8F:89:8B:EF:55:E9:CE:55:15:D2:A5:6A:A6:3D`); earlier evaluation builds used temporary keys. Each release's notes say which key signed it, and APK checksum/certificate files are published with each release. A checksum proves that a file matches the published asset, not independent trust in the publisher. Private production signing keys must never be committed or included in release artifacts.
