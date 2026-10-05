@@ -8,7 +8,7 @@ Download **LensGuard.apk** from [the latest GitHub release](https://github.com/F
 
 Write down the release tag from GitHub, your phone model and Android version. The app shows its version at the bottom of the **Report** tab; several evaluation releases may share a version, so the release tag matters.
 
-From 2.0.0, releases are signed with a permanent key, so installing a newer APK updates the app and keeps your inspections. If Android says the app cannot be updated, the installed copy is a 1.0/1.1 evaluation build (signed with a temporary key) or a build you made yourself: share anything you want to keep, uninstall it, then install the new APK. Uninstalling deletes private notes and photos. Updating from 1.x in place (for example, a local build signed with the same key) moves your 1.x note and photos into an inspection named "Imported from LensGuard 1.x".
+From 2.0.0, releases are signed with a permanent key, so a newer APK installs over the old one and keeps your inspections. **If you had LensGuard 1.0 or 1.1**, Android can't update it, because those versions were signed with temporary keys. Share anything you want to keep, uninstall the old app (**Settings → Apps → See all apps → LensGuard → Uninstall**), then install 2.0. Uninstalling deletes private notes and photos. For other installer messages, see [If it won't install](../README.md#if-it-wont-install). (Someone who updates their own 1.x build in place keeps its note and photos in an inspection named "Imported from LensGuard 1.x".)
 
 ### Optional file verification on a computer
 
@@ -100,7 +100,7 @@ Submit a [device-test report](https://github.com/Feloguarin/LensGuard/issues/new
 
 | Problem | Next step |
 | --- | --- |
-| APK update rejected | Export evidence first; different evaluation signers may require uninstalling before installing. |
+| "Can't update" or "package conflicts with an existing package" | An older LensGuard (1.0/1.1 or your own build) is installed. Share what you want to keep, uninstall it, then open the APK again. Other messages: [If it won't install](../README.md#if-it-wont-install). |
 | Camera black/unavailable | Grant Camera access, close another camera app, return to Camera and tap Start camera. Try rear/front selection. |
 | Flashlight does not work | Start the camera first. Front cameras may have no flash; try the rear camera. |
 | Baseline will not finish | Hold still, wait for fresh motion readings, move away from metal and follow low-accuracy guidance. |

@@ -10,20 +10,35 @@
 
 **[Download the APK](https://github.com/Feloguarin/LensGuard/releases/latest/download/LensGuard.apk)** · [Try it in 10 minutes](docs/TESTING.md) · [Contribute](CONTRIBUTING.md) · [Brand kit](docs/BRAND.md)
 
+> [!IMPORTANT]
+> **Had LensGuard 1.0 or 1.1?** Android will say it can't update the app. Uninstall the old version once, then install 2.0 ([steps](#install-on-your-phone)). From 2.0 on, updates install normally and keep your inspections.
+
 > LensGuard provides inspection clues. It cannot confirm a hidden camera or prove that a room is camera-free. This is an evaluation build; physical Pixel 9 validation is still pending.
 
 *The banner is a conceptual brand illustration, not an app screenshot or a confirmed-camera example.*
 
 ## Install on your phone
 
-1. On your Pixel 9, download **LensGuard.apk** from [GitHub Releases](https://github.com/Feloguarin/LensGuard/releases/latest). APKs are Android installers; no Android Studio or account is required to try the app.
-2. Open the download. If Android requests it, allow installation from the specific browser/file manager you used, then follow the installer prompts. Keep Play Protect enabled and review any warning before proceeding. [Google's Play Protect guidance](https://support.google.com/pixelphone/answer/2812853?hl=en)
-3. Open **LensGuard**. Grant permissions when you choose a tool. Enable Wi-Fi, Bluetooth and Android Location for a complete nearby scan, and connect to the room's Wi-Fi to check devices on its network.
-4. Start with a known camera and ordinary household controls, following the [quick test](docs/TESTING.md).
+1. **If you had LensGuard 1.0 or 1.1, uninstall it first:** **Settings → Apps → See all apps → LensGuard → Uninstall**. Those versions were signed with temporary keys, so Android cannot update them. Uninstalling deletes their notes and photos, so share anything you want to keep before you do.
+2. On your phone, download **LensGuard.apk** from [GitHub Releases](https://github.com/Feloguarin/LensGuard/releases/latest). An APK is an Android installer; you don't need Android Studio or an account.
+3. Open the download. If Android asks, allow installs from the browser or Files app you used, then follow the prompts. Keep Play Protect on and read any warning before you continue ([Google's guidance](https://support.google.com/pixelphone/answer/2812853?hl=en)).
+4. Open **LensGuard** and grant permissions when you choose a tool. For a complete nearby scan, turn on Wi-Fi, Bluetooth and Location, and join the room's Wi-Fi to check devices on its network.
+5. Practise on a known camera and ordinary household objects with the [quick test](docs/TESTING.md).
 
 **Requirements:** Android 9+ (API 28). Current app: 2.0.0; targets API 35. No Play Store listing yet.
 
-**Updating:** from 2.0.0 on, releases are signed with LensGuard's permanent release key, so downloading a newer APK installs it as an update and keeps your inspections. Versions 1.0 and 1.1 were signed with temporary keys that no longer exist, so Android cannot update them: share anything you want to keep from the old app, uninstall it once, then install 2.0. Uninstalling removes private app data. Each release's notes say which key signed it, and its `signing-certificate.txt` lists the certificate.
+**Updates:** from 2.0.0 on, every release is signed with LensGuard's permanent key, so a newer APK installs over the old one and keeps your inspections. Each release's notes say which key signed it, and its `signing-certificate.txt` lists the certificate.
+
+### If it won't install
+
+| What the phone says | What to do |
+| --- | --- |
+| "App not installed as package conflicts with an existing package", "can't update" or "App not installed" | An older LensGuard is still on the phone: 1.0 or 1.1, a build you made yourself, or a copy in another profile. Uninstall it (Settings → Apps → See all apps → LensGuard → Uninstall, or ⋮ → **Uninstall for all users** where offered), then open the APK again. |
+| "Not allowed to install unknown apps from this source" | Tap **Settings** on the message and allow installs for that browser or Files app. |
+| "Blocked by Play Protect" or "Unsafe app blocked" | Play Protect warns about apps that aren't on the Play Store. Read the warning; if you downloaded the APK from this repository's Releases page, tap **More details → Install anyway**. |
+| "There was a problem parsing the package" | The download is incomplete, or the phone runs Android 8 or older. Download it again; LensGuard needs Android 9 or newer. |
+
+Still stuck? [Open an issue](https://github.com/Feloguarin/LensGuard/issues/new/choose) with the exact message and your phone model.
 
 ## What you can do
 
@@ -61,6 +76,7 @@ Record passes, failures and misses instead of assuming detection worked. Follow 
 | Automated tests | 78 tests pass in each of the debug and release variants. They cover highlight detection, overlay geometry, steady tracking, the light comparison sequence, discovery parsing, leads, storage, migration and reports, plus activity flows in English and Spanish on API 28 and 35. |
 | APK signature and download | Verified by CI before publishing; each GitHub release includes the APK, SHA-256 checksum and signing-certificate information. From 2.0.0, releases are signed with the permanent release key (certificate SHA-256 `FF:BD:95:84:8D:D9:A6:E6:15:97:0A:26:22:E6:7A:BD:A0:D6:8F:89:8B:EF:55:E9:CE:55:15:D2:A5:6A:A6:3D`). |
 | Android 15 emulator | Checklist, camera frames and overlay alignment, nearby scan, magnetic chart, photo capture, PDF export and Spanish UI checked. See the [2.0 test record](docs/test-results/2026-10-04-emulator-2.0.md). The emulator has no flashlight, so the light comparison ran only in automated tests. |
+| Network discovery on a real network | The app's ONVIF/UPnP requests and reply parser were checked from a Mac on a home network: the router's 20 UPnP replies were read correctly as one device, and no ONVIF device answered. Sending and listening from a phone is still untested. |
 | Physical Pixel 9 behavior | **Pending community/device testing.** |
 | Hidden-camera detection accuracy | **Not established.** No certified sensitivity, false-positive rate or room-clear claim. |
 

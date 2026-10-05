@@ -4,6 +4,6 @@ Begin with **Start → choose a place → Inspect with camera**, and practise on
 
 Download **LensGuard.apk** and open it on Android 9 or newer. Source code and permission details are in the README.
 
-**Updating:** from 2.0 on, releases are signed with LensGuard's permanent release key, so later downloads install as updates and keep your inspections. Versions 1.0 and 1.1 were signed with temporary keys and cannot be updated in place: share any report or photos you want to keep from the old app, uninstall it once, then install this APK.
+**Had LensGuard 1.0 or 1.1?** Android will say it can't update the app, because those versions were signed with temporary keys. Share any report or photos you want to keep, uninstall the old app (**Settings → Apps → See all apps → LensGuard → Uninstall**), then install this APK. From 2.0 on, releases share LensGuard's permanent key, so later downloads install as updates and keep your inspections. Other installer messages are explained under [If it won't install](https://github.com/Feloguarin/LensGuard#if-it-wont-install).
 
 **Observations cannot confirm a hidden camera or prove that a room is camera-free.** Reflections, magnets, shiny objects and ordinary radios can create clues; offline, wired or concealed cameras can remain undetected. Lint, unit and activity tests and APK signature verification run before publishing. Physical Pixel 9 validation has not been completed.
