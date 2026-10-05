@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Install help: clearer steps for people who had 1.0 or 1.1, and a table of Android installer messages with what to do about each.
+
 ## 2.0.0 evaluation — 2026-10-04
 
 A guided inspection, a lens finder that shows where highlights are, network discovery and shareable reports.
